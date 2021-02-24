@@ -1,0 +1,53 @@
+Protocol Version,"""2.0"""
+Experimenter,"""Edwin Antonio"""
+Project Tag,"""Ethanol and PFH Scan"""
+Experiment Tag,"""Experiment 1 Trial 1"""
+Sample Amount,0.7
+Sample Unit,"""g"""
+Component Good Solvent Index (Only Ouzo),4
+Component Poor Solvent Index (Only Ouzo),5
+Component Shorthand Names,"[ 'dppc', 'dspe-peg', 'PFH', 'ethanol' , 'water']"
+Component Density (g/mL),"[1, 1, 1.67, 0.79, 1]"
+Component MW (g/mol),"[734.04, 2805.5, 41.07, 323, 1]"
+Component Concentration Unit,"['molf','molf','molf','molf','molf']"
+Component Solution vol to wt density (g/mL),"[0.79,0.79,'NA','NA','NA']"
+Component Graphing X Index,3
+Component Graphing Y Index,2
+Component Spacing,"""linear"""
+Blank Component Concentrations (wtfs),"[0,0,0,0,1]"
+"Component Concentrations [min, max, n]","[[0, 0,1], [1.25e-4,1.25e-4,1], [0, 0.7,23],[0, 1, 20]]"
+Stock Names,"['dppc-stock', 'dspe-peg-stock', 'ethanol-PFH-Stock','ethanol-stock', 'water-stock' ]"
+Stock Concentration Units,"[ 'molarity','molarity','wtf', 'wtf','wtf']"
+"Stock Search Concentrations [min, max, n]","[[0.002724647, 0.002724647,1], [0.000356443,0.000356443, 1], [0.005, 0.020,8] , [1,1,1], [1,1,1]]"
+Final Selected Stock Concentrations,"[0.002724647,0.000356443,0.0149199,1,1]"
+Stock Appx Density (g/mL),"[0.79, 0.79, 0.79, 0.79, 1]"
+OT2 Stock Dispensing Order,"[1,2,3,4,5]"
+OT2 Destination Labwares,"[""corning_96_wellplate_360ul_flat"", ""corning_96_wellplate_360ul_flat"",""corning_96_wellplate_360ul_flat""]"
+OT2 Destination Labware Slots,"[""2"",""3"",""4""]"
+OT2 Sample Labware Start,0
+OT2 Stock Labware,"""20mlscintillation_12_wellplate_18000ul"""
+OT2 Stock Labware Slot,"""1"""
+OT2 Stock Labware Stock Position,"[1,2,3,4,5]"
+OT2 Left Pipette,"""p300_single_gen2"""
+OT2 Left Pipette Aspiration Rate (uL/sec),150
+OT2 Left Pipette Dispense Rate (uL/sec),300
+OT2 Left Tipracks,"[""opentrons_96_tiprack_300ul"", ""opentrons_96_tiprack_300ul""]"
+OT2 Left Tiprack Slots,"[""10"", ""7""]"
+OT2 Right Pipette,"""p1000_single"""
+OT2 Right Pipette Aspiration Rate (uL/sec),500
+OT2 Right Pipette Dispense Rate (uL/sec),1000
+OT2 Right Tipracks,"[""opentrons_96_tiprack_1000ul"", ""opentrons_96_tiprack_1000ul""]"
+OT2 Right Tiprack Slots,"[""11"",""8""]"
+OT2 Bottom Dispensing Clearance (mm),30
+OT2 Dependent Transfer Volume (uL),350
+OT2 Dependent Transfer Dest Labwares,"[""corning_96_wellplate_360ul_flat""]"
+OT2 Dependent Transfer Dest Slots,"[""5""]"
+OT2 Independent Transfer Volume (uL),300
+OT2 Independent Transfer Source Labwares,"[""corning_96_wellplate_360ul_flat"", ""corning_96_wellplate_360ul_flat""]"
+OT2 Independent Transfer Source Slots,"[""2"", ""3""]"
+"OT2 Independent Transfer Source [Start, Stop]","[0,5]"
+OT2 Independent Transfer Dest Labwares,"[""corning_96_wellplate_360ul_flat"", ""corning_96_wellplate_360ul_flat""]"
+OT2 Independent Transfer Dest Slots,"[""5"",""6""]"
+"OT2 Independent Transfer Dest [Start, Stop]","[0,5]"
+Last Updated Code Date ,12
+,4

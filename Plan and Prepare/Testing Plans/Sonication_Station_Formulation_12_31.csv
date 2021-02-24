@@ -1,0 +1,53 @@
+Protocol Version,"""2.0"""
+Experimenter,"""Edwin Antonio"""
+Project Tag,"""Sonication Station Oil Scan"""
+Experiment Tag,"""Dec 12 31 Experiment 1"""
+Sample Amount,10
+Sample Unit,"""mL"""
+Component Good Solvent Index (Only Ouzo),4
+Component Poor Solvent Index (Only Ouzo),5
+Component Shorthand Names,"['Precursor 1',  'Precursor 2', 'Ethylene glycol']"
+Component Density (g/mL),"['NA', 'NA', 1.113]"
+Component MW (g/mol),"['NA', 'NA', 62.07]"
+Component Concentration Unit,"['volf', 'volf', 'volf']"
+Component Solution vol to wt density (g/mL),"['NA','NA', 'NA']"
+Component Graphing X Index,0
+Component Graphing Y Index,1
+Component Spacing,"""linear"""
+Blank Component Concentrations (wtfs),"[0,0.3, 0.7]"
+"Component Concentrations [min, max, n]","[[0, 1,10], [0,1,5]]"
+Stock Names,"['precursor1-stock', 'precursor2-stock', 'ethylene-glycol-stock']"
+Stock Concentration Units,"[ 'volf', 'volf', 'volf']"
+"Stock Search Concentrations [min, max, n]",['NA']
+Final Selected Stock Concentrations,"[1,1,1]"
+Stock Appx Density (g/mL),"['NA', 'NA']"
+OT2 Stock Dispensing Order,"[1,2,3]"
+OT2 Destination Labwares,"[""corning_96_wellplate_360ul_flat"", ""corning_96_wellplate_360ul_flat"",""corning_96_wellplate_360ul_flat""]"
+OT2 Destination Labware Slots,"[""2"",""3"",""4""]"
+OT2 Sample Labware Start,0
+OT2 Stock Labware,"""corning_96_wellplate_360ul_flat"""
+OT2 Stock Labware Slot,"""1"""
+OT2 Stock Labware Stock Position,"[1,2,3,4,5]"
+OT2 Left Pipette,"""p300_single_gen2"""
+OT2 Left Pipette Aspiration Rate (uL/sec),150
+OT2 Left Pipette Dispense Rate (uL/sec),300
+OT2 Left Tipracks,"[""opentrons_96_tiprack_300ul"", ""opentrons_96_tiprack_300ul""]"
+OT2 Left Tiprack Slots,"[""10"", ""7""]"
+OT2 Right Pipette,"""p1000_single"""
+OT2 Right Pipette Aspiration Rate (uL/sec),500
+OT2 Right Pipette Dispense Rate (uL/sec),1000
+OT2 Right Tipracks,"[""opentrons_96_tiprack_1000ul"", ""opentrons_96_tiprack_1000ul""]"
+OT2 Right Tiprack Slots,"[""11"",""8""]"
+OT2 Bottom Dispensing Clearance (mm),30
+OT2 Dependent Transfer Volume (uL),350
+OT2 Dependent Transfer Dest Labwares,"[""corning_96_wellplate_360ul_flat""]"
+OT2 Dependent Transfer Dest Slots,"[""5""]"
+OT2 Independent Transfer Volume (uL),300
+OT2 Independent Transfer Source Labwares,"[""corning_96_wellplate_360ul_flat"", ""corning_96_wellplate_360ul_flat""]"
+OT2 Independent Transfer Source Slots,"[""2"", ""3""]"
+"OT2 Independent Transfer Source [Start, Stop]","[0,5]"
+OT2 Independent Transfer Dest Labwares,"[""corning_96_wellplate_360ul_flat"", ""corning_96_wellplate_360ul_flat""]"
+OT2 Independent Transfer Dest Slots,"[""5"",""6""]"
+"OT2 Independent Transfer Dest [Start, Stop]","[0,5]"
+Last Updated Code Date ,12
+,4
