@@ -159,6 +159,9 @@ def loading_labware(protocol, experiment_dict):
     
     return loaded_labware_dict # even if there was a way to call from protocol object would need to rename all over aagin
 
+def check_for_distribute(list1, min_val, max_val): 
+    return(all(max_val >= x >= min_val or x == 0 for x in list1)) 
+
 def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges):
     """ Given the protocol used to set up the loaded labware dict, along with the volumes to pipette will send transfer commands to the ot2.
     The volumes fed as a 2D list where each sublist is the the volumes for one stock. Ranges are fed similar """
@@ -177,16 +180,21 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
         small_pipette = right_pipette
         large_pipette = left_pipette
 
+    ###### Here should be the stopping point and decide where thing deviate? 
+
     ## function to check prior if volumes are inbetween .min/max_volume and pipettes are appropiate
     stock_volumes = rearrange_2D_list(stock_volumes_df.values) # change so it grabs per column and not have to use this function
     info_list = []
-    for stock_well_index, (stock_volume, stock_range) in enumerate(zip(stock_volumes, stock_ranges)): # each iteration is one stock position (one range = one stock position)
+    stock_well_index = 0 # quick fix since need to move to next everytime a range is called, could reorganize but will do it later
+    for stock_tracker, (stock_volume, stock_range) in enumerate(zip(stock_volumes, stock_ranges)): # each iteration is one stock but it is not one stock position
         complete_volumes_of_one_stock = stock_volume
         for well_range in stock_range:
             lower = well_range[0]
             upper = well_range[1]
-            well_range = range(lower,upper)
-            stock_to_pull = stock_wells[stock_well_index]
+            well_range = range(lower,upper) 
+            stock_to_pull = stock_wells[stock_well_index] # will just stick to one need to add and move on
+            stock_well_index = stock_well_index+1 # so now next time we assign a stock to pull it will be one higher than the next
+            print('Switching to next stock. This is Stock ' + str(stock_tracker) + 'at position ' + str(stock_well_index))
             volumes_to_pipette = complete_volumes_of_one_stock[lower:upper]
 
             # first initialize pipette and pickup tip, by checking the small pipette first, resolution is ideal
@@ -199,9 +207,12 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
                 pipette = large_pipette        
                 
             stock_volumes = volumes_to_pipette
-            stock_index = stock_well_index
-
             pipette.pick_up_tip()
+
+            # here is where you do conditionals like if all within this range then just use distribbute
+            #if check_for_distribute(stock_volumes, pipette.min_volume, pipette.max_volume) == True: # the issue with this it might be very wasteful and require more stock since buffers alot.
+             #   pipette.distribute(stock_volumes, stock_to_pull, dest_wells[lower:upper])
+            
             for well_index, volume in zip(well_range, stock_volumes):
                 well_to_dispense = dest_wells[well_index]
                 stock_to_pull = stock_to_pull
