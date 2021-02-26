@@ -194,8 +194,9 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
             well_range = range(lower,upper) 
             stock_to_pull = stock_wells[stock_well_index] # will just stick to one need to add and move on
             stock_well_index = stock_well_index+1 # so now next time we assign a stock to pull it will be one higher than the next
-            print('Switching to next stock. This is Stock ' + str(stock_tracker) + 'at position ' + str(stock_well_index))
             volumes_to_pipette = complete_volumes_of_one_stock[lower:upper]
+            stock_volumes = volumes_to_pipette
+
 
             # first initialize pipette and pickup tip, by checking the small pipette first, resolution is ideal
             initial_volume = volumes_to_pipette[0]
@@ -206,43 +207,43 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
             elif large_pipette.min_volume <= initial_volume <= large_pipette.max_volume:
                 pipette = large_pipette        
                 
-            stock_volumes = volumes_to_pipette
             pipette.pick_up_tip()
 
             # here is where you do conditionals like if all within this range then just use distribbute
-            #if check_for_distribute(stock_volumes, pipette.min_volume, pipette.max_volume) == True: # the issue with this it might be very wasteful and require more stock since buffers alot.
-             #   pipette.distribute(stock_volumes, stock_to_pull, dest_wells[lower:upper])
+            if check_for_distribute(stock_volumes, pipette.min_volume, pipette.max_volume) == True: # the issue with this it might be very wasteful and require more stock since buffers, we already delt with ranges so we should be good on that
+               pipette.distribute(stock_volumes, stock_to_pull, dest_wells[lower:upper], new_tip = 'never')
             
-            for well_index, volume in zip(well_range, stock_volumes):
-                well_to_dispense = dest_wells[well_index]
-                stock_to_pull = stock_to_pull
+            else:
+                for well_index, volume in zip(well_range, stock_volumes):
+                    well_to_dispense = dest_wells[well_index]
+                    stock_to_pull = stock_to_pull
 
-                # nonswitching cases
-                if (small_pipette.min_volume <= volume <= small_pipette.max_volume or volume==0) and pipette == small_pipette:
-                    pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never') 
+                    # nonswitching cases
+                    if (small_pipette.min_volume <= volume <= small_pipette.max_volume or volume==0) and pipette == small_pipette:
+                        pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never') 
 
-                elif (large_pipette.min_volume < volume < large_pipette.max_volume) and pipette == large_pipette:
-                    pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
+                    elif (large_pipette.min_volume < volume < large_pipette.max_volume) and pipette == large_pipette:
+                        pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
 
-                # switching cases
-                elif (small_pipette.min_volume <= volume <= small_pipette.max_volume or volume==0) and pipette == large_pipette:
-                    pipette.return_tip()
-                    pipette = small_pipette
-                    pipette.pick_up_tip()
-                    pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
+                    # switching cases
+                    elif (small_pipette.min_volume <= volume <= small_pipette.max_volume or volume==0) and pipette == large_pipette:
+                        pipette.return_tip()
+                        pipette = small_pipette
+                        pipette.pick_up_tip()
+                        pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
 
-                elif (large_pipette.min_volume < volume < large_pipette.max_volume) and pipette == small_pipette: 
-                    pipette.return_tip()
-                    pipette = large_pipette
-                    pipette.pick_up_tip()
-                    pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
+                    elif (large_pipette.min_volume < volume < large_pipette.max_volume) and pipette == small_pipette: 
+                        pipette.return_tip()
+                        pipette = large_pipette
+                        pipette.pick_up_tip()
+                        pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
 
-                info = well_to_dispense
-                info_list.append(info)
+                    info = well_to_dispense
+                    info_list.append(info)
             pipette.drop_tip()
-
-        for line in protocol.commands():
-            print(line)     
+    # print('This is Stock ' + str(stock_tracker) + ' at position ' + str(stock_well_index))
+    for line in protocol.commands(): # Remember that this command prints all of the previous stuff with it so if in a loop will print the whole history
+        print(line)     
     return {'info concat':info_list}
 
 
