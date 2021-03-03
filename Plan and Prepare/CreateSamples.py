@@ -99,6 +99,8 @@ def all_same(items):
     return all(x == items[0] for x in items)
 
 def combine_df(df1,df2):
+    df1.reset_index(drop=True)
+    df2.reset_index(drop=True)
     df3 = pd.concat([df1,df2], axis=1)
     return df3
 
@@ -134,7 +136,7 @@ def generate_candidate_lattice_concentrations(experiment_csv_dict, unity_filter 
     for i in range(len(conc_grid)): 
         component_name = component_names[i]
         component_unit = component_units[i]
-        component_conc_dict[component_name + " " + component_unit] = conc_grid[i].ravel()
+        component_conc_dict[component_name + " " + 'concentration' + " " + component_unit] = conc_grid[i].ravel()
     concentration_df = pd.DataFrame.from_dict(component_conc_dict)
 
     # Here is where we can incorperate different types of filters, such as this unity filter. 
@@ -146,7 +148,7 @@ def generate_candidate_lattice_concentrations(experiment_csv_dict, unity_filter 
             completing_index = len(component_names)-1
             completing_component_name = component_names[completing_index]
             completing_component_unit = component_units[completing_index]
-            completing_entry_name = completing_component_name + " " + completing_component_unit
+            completing_entry_name = completing_component_name + " " + 'concentration' + " " + completing_component_unit
             concentration_df[completing_entry_name] = (1 - concentration_df.sum(axis=1)) 
         
             unfiltered_concentration_df = concentration_df # used to catch errors when concentration_df after fully defined concentration produces no suitable canidates
@@ -270,7 +272,7 @@ def calculate_ouzo_volumes_from_wtf(sample_conc_df, experiment_csv_dict, stock_s
     
 
     #ensuring the df of sample names and units match
-    check_components = [name + " " + unit for name, unit in zip(component_names, component_units)]
+    check_components = [name + " " + "concentration" + " " + unit for name, unit in zip(component_names, component_units)]
     assert check_components == list(sample_conc_df.columns), 'Component names and unit during sample concentration generation does not match the names and units for volume calulation.'
     sample_conc_canidates = sample_conc_df.values # ideally you would not be doing this and applying expessions to the columns, but since component volumes are dependent on each other...could create the whole and filter out negative values
 
