@@ -82,7 +82,7 @@ def find_max_stock_volume_labware(experiment_csv_dict, custom_labware_dict): # c
 def stock_well_ranges(df, limit):
     """Given a dataframe of stocks volumes to pipette, will return the ranges of indexes for the volumes
     seperated in such a way to satisfy the volume limitation of current stock labware. Ranges of the indexes are 
-    provide in a 2D list with each entry consisting of a lower and a upper index. 
+    provide in a 2D list with each entry consisting of a lower and a upper_well_index index. 
     A stock is identified by having the term stock or Stock in its df column.
     Note: dataframe/series indexing is a little different than list indexing """
     
@@ -189,16 +189,18 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
     for stock_tracker, (stock_volume, stock_range) in enumerate(zip(stock_volumes, stock_ranges)): # each iteration is one stock but it is not one stock position
         complete_volumes_of_one_stock = stock_volume
         for well_range in stock_range:
-            lower = well_range[0]
-            upper = well_range[1]
-            well_range = range(lower,upper) 
+            lower_well_index = well_range[0]
+            upper_well_index = well_range[1]
+            wells_to_dispense = dest_wells[lower_well_index:upper_well_index]
+            volumes_to_pipette = complete_volumes_of_one_stock[lower_well_index:upper_well_index]
+            
+            well_range = range(lower_well_index,upper_well_index) 
+
             stock_to_pull = stock_wells[stock_well_index] # will just stick to one need to add and move on
             stock_well_index = stock_well_index+1 # so now next time we assign a stock to pull it will be one higher than the next
-            volumes_to_pipette = complete_volumes_of_one_stock[lower:upper]
-            stock_volumes = volumes_to_pipette
+            
 
-
-            # first initialize pipette and pickup tip, by checking the small pipette first, resolution is ideal
+            # First initialize pipette and pickup tip, by checking the small pipette first, resolution is ideal
             initial_volume = volumes_to_pipette[0]
             small_pipette = small_pipette
             large_pipette = large_pipette
@@ -210,14 +212,11 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
             pipette.pick_up_tip()
 
             # here is where you do conditionals like if all within this range then just use distribbute
-            if check_for_distribute(stock_volumes, pipette.min_volume, pipette.max_volume) == True: # the issue with this it might be very wasteful and require more stock since buffers, we already delt with ranges so we should be good on that
-               pipette.distribute(stock_volumes, stock_to_pull, dest_wells[lower:upper], new_tip = 'never')
-            
+            if check_for_distribute(volumes_to_pipette, pipette.min_volume, pipette.max_volume) == True: # the issue with this it might be very wasteful and require more stock since buffers, we already delt with ranges so we should be good on that
+               pipette.distribute(volumes_to_pipette, stock_to_pull, dest_wells[lower_well_index:upper_well_index], new_tip = 'never')
+              
             else:
-                for well_index, volume in zip(well_range, stock_volumes):
-                    well_to_dispense = dest_wells[well_index]
-                    stock_to_pull = stock_to_pull
-
+                for well_to_dispense, volume in zip(wells_to_dispense, volumes_to_pipette):
                     # nonswitching cases
                     if (small_pipette.min_volume <= volume <= small_pipette.max_volume or volume==0) and pipette == small_pipette:
                         pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never') 
@@ -238,8 +237,8 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
                         pipette.pick_up_tip()
                         pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
 
-                    info = well_to_dispense
-                    info_list.append(info)
+            info = wells_to_dispense
+            info_list.append(info)
             pipette.drop_tip()
     # print('This is Stock ' + str(stock_tracker) + ' at position ' + str(stock_well_index))
     for line in protocol.commands(): # Remember that this command prints all of the previous stuff with it so if in a loop will print the whole history

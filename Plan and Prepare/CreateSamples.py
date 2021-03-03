@@ -423,8 +423,11 @@ def selected_down(array, lower_index, upper_index):
     array = array[lower_index:upper_index]
     return array
 
-def create_csv(destination, info_list, wtf_samples, experiment_csv_dict):  
-    """Creates a CSV which contains sample information in addition tieing a unique ID to the row of information. Each row in the created csv corresponds to one sample and the unique ID contains date and well information. Information is gathered from the printed commands of the OT2 either when executing or simulating. Given the type of execution in current code, this only supports the case of consecutive sample making (i.e. samples made in well order, with no skipping of wells)."""
+def create_df(info_list, wtf_samples, experiment_csv_dict):  
+    """Creates a dataframe which contains sample information in addition tieing a unique ID to the row of information. 
+    Each row in the created dataframe corresponds to one sample and the unique ID contains date and well information. 
+    'Information is gathered from the printed commands of the OT2 either when executing or simulating in the form of one sample = well_of_labware__on_slot
+    Given the type of execution in current code, this REQUIRES the """
     
     time = str(datetime.datetime.now(timezone('US/Pacific')).date()) # should be embaded once you run
     component_names = experiment_csv_dict['Component Shorthand Names']
@@ -440,7 +443,7 @@ def create_csv(destination, info_list, wtf_samples, experiment_csv_dict):
         experiment_component_header.append(component_names[i] + ' wtf')
 
     complete_header = UID_header + general_component_header + slot_header + labware_header + well_header
-    complete_experiment_header = UID_header + experiment_component_header + slot_header + labware_header + well_header
+    complete_experiment_header = UID_header + experiment_component_header + well_header + labware_header + slot_header
 
 
     wells = []
@@ -448,32 +451,31 @@ def create_csv(destination, info_list, wtf_samples, experiment_csv_dict):
     slots = []
     info_cut = info_list[0:len(wtf_samples)] #info only being used of length of number of samples
     for info in info_cut:
-        str_info = str(info)
-        spacing_index = []
-        for i, letter in enumerate(str_info):
-            if letter == ' ':
-                spacing_index.append(i)
-        well = str_info[0:spacing_index[0]]
+        # string consist of three components, well_of_labware__on_slot with of and on being the seperators which is native and consistent across all OT2 protocols
+        string = str(info)
+        lower_seperator = 'of'
+        upper_seperator = 'on'
+
+        lower_seperator_index = string.index(lower_seperator)
+        upper_seperator_index = string.rindex(upper_seperator)
+        well = string[:lower_seperator_index-1]
+        labware = string[lower_seperator_index + len(lower_seperator)+ 1:upper_seperator_index-1]
+        slot = string[upper_seperator_index+len(upper_seperator)+1:]
+        
         wells.append(well)
-        labware = str_info[spacing_index[1]+1:spacing_index[8]]
         labwares.append(labware)
-        slot = str_info[spacing_index[9]+1:]
         slots.append(slot)
 
     csv_entries = []
     ## Adding unique id and other information into one sublist to be fed as row into writer
     for component_wtfs, slot, labware, well in zip(wtf_samples, slots, labwares, wells):
-        UID = time + "_" +experiment_csv_dict['Component Shorthand Names'][experiment_csv_dict['Component Graphing X Index']]+ "_" + experiment_csv_dict['Component Shorthand Names'][experiment_csv_dict['Component Graphing Y Index']] + "_" + well
-        csv_entry = [UID] + component_wtfs.tolist() + [slot] + [labware] + [well]
+        UID = well + "_" + time # add name of interest here to make it easier to identify
+        csv_entry = [UID] + component_wtfs.tolist() + [well] + [labware] + [slot]
         csv_entries.append(csv_entry)
 
-    with open(destination, 'w', newline='',encoding='utf-8') as csvfile:
-        csvwriter = csv.writer(csvfile, delimiter = ",")
-        csvwriter.writerow(complete_header)
-        csvwriter.writerow(complete_experiment_header) # so what 
+    df = pd.DataFrame(csv_entries, columns = complete_experiment_header)
+    return df
 
-        for row in csv_entries:
-            csvwriter.writerow(row)
 
 def rearrange_2D_list(nth_list):
     """Rearranges information from a 2D_list of length m with entries of length n to an outer array of length n, with entries of length m. Each entry now holds the ith entry of original entry in a new entry.
@@ -560,7 +562,7 @@ def stock_components(stock_name):
     return stock_solutes, stock_solvents
 
 
-def calculate_stock_prep_df(experiment_dict, volume_df, chem_database_path, buffer_pct = 10):
+def calculate_stock_prep_df(experiment_dict, volume_df, chem_database_path, buffer_pct = 40):
     
     # Isolate all stock volume entries in dataframe
     cols = volume_df.columns
