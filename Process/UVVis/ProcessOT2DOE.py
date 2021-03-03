@@ -1,6 +1,3 @@
-import pandas as pd
-import numpy as np
-
 def extract_plates(path, sheet_list):
     """Will return a sublist of plates absorbance information in dataframe format
     Must ensure that excel sheet has only the samples made in the csv plan as will cause errors downstream."""
@@ -20,7 +17,6 @@ def merge_wavelength_dfs(df_list):
         merge_list.append(df)
     return pd.concat(merge_list)
 
-
 def baseline_correction(df_samples, baseline_series): 
     """Given the series iloc of a the blank, subtracts the value at every wavelength of blank at resp. wavelength. 
     Simple subtraction blanking."""
@@ -38,6 +34,7 @@ def baseline_correction(df_samples, baseline_series):
     baseline_corrected_df.index = df_samples[0].index
     return baseline_corrected_df
 
+
 def add_abs_to_sample_info(sample_info_df, abs_df):
     
     wavelengths = list(abs_df.loc['Wavelength'])
@@ -47,7 +44,7 @@ def add_abs_to_sample_info(sample_info_df, abs_df):
     
     sample_info_df.reset_index(drop=True, inplace=True)
     abs_df.reset_index(drop=True, inplace=True)
-    combined_df = pd.concat([sample_info_df, abs_df], axis = 1)
+    combined_df = pd.concat([sample_info, abs_df], axis = 1)
     return combined_df
 
 def remove_visual_outliers(x, y, z, z_score_threshold = 3):
@@ -70,5 +67,3 @@ def remove_visual_outliers(x, y, z, z_score_threshold = 3):
     
     xyz_array = [x,y,z]
     return xyz_array
-
-
