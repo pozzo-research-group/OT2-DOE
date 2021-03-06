@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+
 def extract_plates(path, sheet_list):
     """Will return a sublist of plates absorbance information in dataframe format
     Must ensure that excel sheet has only the samples made in the csv plan as will cause errors downstream."""
@@ -40,11 +43,12 @@ def add_abs_to_sample_info(sample_info_df, abs_df):
     wavelengths = list(abs_df.loc['Wavelength'])
     wavelengths_names = [str(wavelength)+'nm' for wavelength in wavelengths]
     abs_df.columns = wavelengths_names
+    abs_df.drop(['Wavelength'])
     
     
     sample_info_df.reset_index(drop=True, inplace=True)
     abs_df.reset_index(drop=True, inplace=True)
-    combined_df = pd.concat([sample_info, abs_df], axis = 1)
+    combined_df = pd.concat([sample_info_df, abs_df], axis = 1)
     return combined_df
 
 def remove_visual_outliers(x, y, z, z_score_threshold = 3):
@@ -68,55 +72,3 @@ def remove_visual_outliers(x, y, z, z_score_threshold = 3):
     xyz_array = [x,y,z]
     return xyz_array
 
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
-
-gauth = GoogleAuth()
-# gauth.LocalWebserverAuth()
-gauth.LoadCredentialsFile("OT2creds.txt") 
-drive = GoogleDrive(gauth)
-
-def team_drive_dict(): # for now lets keep this static, will prompt to login for the team drive. 
-    """team_drive_id must be formatted with single quotations in the string, with the string datatype coming from double 
-    quotation marks i.e. "'team_drive_id'" """ 
-    
-    team_drive_folder_list = drive.ListFile({'q':"'0AHSxuxDy84zYUk9PVA' in parents and trashed=false", 
-                                'corpora': 'teamDrive', 
-                                'teamDriveId': '0AHSxuxDy84zYUk9PVA', 
-                                'includeTeamDriveItems': True, 
-                                'supportsTeamDrives': True}).GetList()
-
-    team_drive_id_dict = {}    
-    for file in team_drive_folder_list: # hmm the fact that this is static ID we can make into dictioanry
-        team_drive_id_dict[file['title']] =  file['id']
-    
-    return team_drive_id_dict
-
-def file_and_folder_navi(folder_id): # for now lets keep this static, will prompt to login for the team drive. 
-    folder_id = '"' + folder_id  + '"'
-    
-    drive_list = drive.ListFile({'q':folder_id + " in parents and trashed=false", 
-                                'corpora': 'teamDrive', 
-                                'teamDriveId': '0AHSxuxDy84zYUk9PVA', 
-                                'includeTeamDriveItems': True, 
-                                'supportsTeamDrives': True}).GetList()
-
-    drive_dict = {}    
-    for file in drive_list: # hmm the fact that this is static ID we can make into dictioanry
-        drive_dict[file['title']] =  file['id']
-    
-    return drive_dict
-
-def upload_to_team_drive_folder(folder_id, file_path, file_name):    
-    # dont set title or mimetype in order to make it default to actual files name and dtype
-    f = drive.CreateFile({
-        'title': file_name,
-        'parents': [{
-            'kind': 'drive#fileLink',
-            'teamDriveId': '0AHSxuxDy84zYUk9PVA',
-            'id': folder_id
-        }]
-    })
-    f.SetContentFile(file_path)
-
-    f.Upload(param={'supportsTeamDrives': True})
