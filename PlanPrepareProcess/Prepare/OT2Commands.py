@@ -78,6 +78,8 @@ def find_max_stock_volume_labware(experiment_csv_dict, custom_labware_dict): # c
     stock_plate_well_volume = stock_plate.__dict__['_well_definition']['A1']['totalLiquidVolume'] 
     return stock_plate_well_volume
 
+def check_for_distribute(list1, min_val, max_val): 
+    return(all(max_val >= x >= min_val or x == 0 for x in list1)) 
 
 def stock_well_ranges(df, limit):
     """Given a dataframe of stocks volumes to pipette, will return the ranges of indexes for the volumes
@@ -112,7 +114,7 @@ def loading_labware(protocol, experiment_dict):
     
     protocol.home() 
     
-    #Initializing run according to API - Is this truly necessary?
+    #Initializing run according to API - Is this truly necessary? I think the homing is necessary as with an execute protocol whenever first used it will look for the call of the homing method. 
     
     api_level = '2.0'
     
@@ -159,8 +161,6 @@ def loading_labware(protocol, experiment_dict):
     
     return loaded_labware_dict # even if there was a way to call from protocol object would need to rename all over aagin
 
-def check_for_distribute(list1, min_val, max_val): 
-    return(all(max_val >= x >= min_val or x == 0 for x in list1)) 
 
 def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges):
     """ Given the protocol used to set up the loaded labware dict, along with the volumes to pipette will send transfer commands to the ot2.
@@ -182,6 +182,8 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
 
     ###### Here should be the stopping point and decide where thing deviate? 
 
+    ## Is there no assertion error to check if labwares are big enough for volumes????
+
     ## function to check prior if volumes are inbetween .min/max_volume and pipettes are appropiate
     stock_volumes = rearrange_2D_list(stock_volumes_df.values) # change so it grabs per column and not have to use this function
     info_list = []
@@ -194,16 +196,12 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
             wells_to_dispense = dest_wells[lower_well_index:upper_well_index]
             volumes_to_pipette = complete_volumes_of_one_stock[lower_well_index:upper_well_index]
             
-            well_range = range(lower_well_index,upper_well_index) 
-
             stock_to_pull = stock_wells[stock_well_index] # will just stick to one need to add and move on
             stock_well_index = stock_well_index+1 # so now next time we assign a stock to pull it will be one higher than the next
             
 
             # First initialize pipette and pickup tip, by checking the small pipette first, resolution is ideal
             initial_volume = volumes_to_pipette[0]
-            small_pipette = small_pipette
-            large_pipette = large_pipette
             if small_pipette.min_volume <= initial_volume <= small_pipette.max_volume or initial_volume == 0:
                 pipette = small_pipette
             elif large_pipette.min_volume <= initial_volume <= large_pipette.max_volume:
@@ -246,6 +244,74 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
     return {'info concat':info_list}
 
 
+
+def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, number_of_samples):
+    """This function will take the already loaded dictionary and load more labware, specfically made for a final transfer from the destination sample plates to another plate. 
+    The reaason for this final transfer is to allow samples to be made at any volume or at least a close enough volume and then moved to a secondary plate to be analyzed at the sample 
+    quantity (important for things like path lengths). This could theoretically be used independently from an initial sample creation, would just need to initialize the loading of labware. 
+    The reason why this could be useful is because the deck is limited in space so creating the samples and having their final transfer labware all on the deck at the same time could pose a constraint, 
+    however unlikely as typically you will be transfering into a smaller vessel with more wells than the original synthesis vessel."""
+    
+    dest_wells = loaded_dict['Destination Wells']
+    stock_wells = loaded_dict['Stock Wells']
+    left_pipette = loaded_dict['Left Pipette']
+    right_pipette = loaded_dict['Right Pipette']
+
+    # Remember we initialize pipettes as large and small is because we want to have the highest precision possible!
+    if left_pipette.max_volume < right_pipette.max_volume:
+        small_pipette = left_pipette 
+        large_pipette = right_pipette 
+    
+    if left_pipette.max_volume > right_pipette.max_volume:
+        small_pipette = right_pipette
+        large_pipette = left_pipette
+
+    # Loading the final transfer labware
+
+    final_transfer_plate_names = experiment_dict['OT2 Single Transfer From Dest Labwares']
+    final_transfer_plate_slots = experiment_dict['OT2 Single Transfer From Dest Slots']
+    final_transfer_wells = object_to_well_list(protocol, final_transfer_plate_names, final_transfer_plate_slots) 
+
+    transfer_volume = float(experiment_dict['OT2 Single Transfer From Dest Volume (uL)'])
+    bottom_dispensing_clearence = experiment_dict['OT2 Single Transfer From Dest Bottom Dispensing Clearance (mm)']
+
+    # check to make sure enough wells to transfer into
+    assert len(final_transfer_wells) >= number_of_samples, 'The number of samples is exceeds the number of final destination wells'
+
+    # make this bit into a function since commonly called 
+    if small_pipette.min_volume <= transfer_volume <= small_pipette.max_volume or initial_volume == 0:
+        pipette = small_pipette
+    elif large_pipette.min_volume <= transfer_volume <= large_pipette.max_volume:
+        pipette = large_pipette  
+        
+    # final_transfer_wells_selected = final_transfer_wells[0:number_of_wells]
+    # dest_wells_selected = dest_wells[0:number_of_wells]
+
+    sample_final_location = []
+    for well_index in range(number_of_samples):
+        pipette.transfer(transfer_volume, dest_wells[well_index], final_transfer_wells[well_index], new_tip = 'always') 
+        sample_final_location.append(final_transfer_wells[well_index])
+    for line in protocol.commands(): 
+        print(line)
+    return sample_final_location
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################################### NO LONGER IN USE DOCUMENT OR DELETE #####################################################################
 def create_samples(protocol, experiment_dict, sample_volumes, transfer = False, custom_labware_dict = {}):
     """NO LONGER IN USE
     
