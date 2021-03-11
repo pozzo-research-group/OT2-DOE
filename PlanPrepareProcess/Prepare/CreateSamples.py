@@ -431,7 +431,7 @@ def create_df(info_list, wtf_samples, experiment_csv_dict, unique_identifier = N
     'Information is gathered from the printed commands of the OT2 either when executing or simulating in the form of one sample = well_of_labware__on_slot
     Given the type of execution in current code, this REQUIRES the """
     
-    time = datetime.datetime.today().strftime('%d-%m-%Y') # str(datetime.datetime.now(timezone('US/Pacific')).date()) # should be embaded once you run
+    time = datetime.datetime.today().strftime('%m-%d-%Y') # str(datetime.datetime.now(timezone('US/Pacific')).date()) # should be embaded once you run
     component_names = experiment_csv_dict['Component Shorthand Names']
     UID_header = ['UID']
     slot_header = ['Slot']
@@ -471,7 +471,7 @@ def create_df(info_list, wtf_samples, experiment_csv_dict, unique_identifier = N
     csv_entries = []
     ## Adding unique id and other information into one sublist to be fed as row into writer
     for component_wtfs, slot, labware, well in zip(wtf_samples, slots, labwares, wells):
-        UID = "S" + slot + "_" + well + "_" + '02-26-2021'  # add name of interest here to make it easier to identify
+        UID = "S" + slot + "_" + well + "_" + time  # add name of interest here to make it easier to identify
         if unique_identifier is not None: 
             UID = UID + "_" + str(unique_identifier)
         csv_entry = [UID] + component_wtfs.tolist() + [well] + [labware] + [slot]

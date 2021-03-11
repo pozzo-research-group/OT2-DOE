@@ -3,13 +3,21 @@ from pydrive.drive import GoogleDrive
 
 gauth = GoogleAuth()
 gauth.LocalWebserverAuth()
-# gauth.LoadCredentialsFile("OT2creds.txt") 
+# gauth.LoadCredentialsFile(path_to_credentials) 
 drive = GoogleDrive(gauth)
+def initialize_connection(path_to_credentials): # would need to make these globally availble or return the drive 
+    gauth = GoogleAuth()
+    # gauth.LocalWebserverAuth()
+    gauth.LoadCredentialsFile(path_to_credentials) 
+    drive = GoogleDrive(gauth)
 
-def team_drive_dict(): # for now lets keep this static, will prompt to login for the team drive. 
+def team_drive_dict(path_to_credentials): # for now lets keep this static, will prompt to login for the team drive. 
     """team_drive_id must be formatted with single quotations in the string, with the string datatype coming from double 
     quotation marks i.e. "'team_drive_id'" """ 
-    
+    gauth = GoogleAuth()
+    # gauth.LocalWebserverAuth()
+    gauth.LoadCredentialsFile(path_to_credentials) 
+    drive = GoogleDrive(gauth)
     team_drive_folder_list = drive.ListFile({'q':"'0AHSxuxDy84zYUk9PVA' in parents and trashed=false", 
                                 'corpora': 'teamDrive', 
                                 'teamDriveId': '0AHSxuxDy84zYUk9PVA', 
