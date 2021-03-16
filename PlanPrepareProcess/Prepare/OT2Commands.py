@@ -60,38 +60,20 @@ def rearrange_2D_list(nth_list):
         list_rearranged.append(ith_of_each_sublist)
     return list_rearranged
 
-def find_max_dest_volume_labware(experiment_csv_dict, custom_labware_dict): # can i just simulate hardcode , custom_labware_dict
-    """Using the stock labware name from the csv, loads the appropiate labware from both 
-    a custom and the native libary and determines the maximum volume for one stock labware well. Assumes all labware is all identical."""
-    protocol = simulate.get_protocol_api('2.0', extra_labware=custom_labware_dict) # encapsulated as only need an instance to simualte and toss
-    stock_plate = protocol.load_labware(experiment_csv_dict['OT2 Destination Labwares'][0], experiment_csv_dict['OT2 Destination Labware Slots'][0])
-    stock_plate_rows = [well for row in stock_plate.rows() for well in row]
-    stock_plate_well_volume = stock_plate.__dict__['_well_definition']['A1']['totalLiquidVolume'] 
-    return stock_plate_well_volume
-
-def find_max_stock_volume_labware(experiment_csv_dict, custom_labware_dict): # can i just simulate hardcode , custom_labware_dict
-    """Using the stock labware name from the csv, loads the appropiate labware from both 
-    a custom and the native libary and determines the maximum volume for one stock labware well. Assumes all labware is all identical."""
-    protocol = simulate.get_protocol_api('2.0', extra_labware=custom_labware_dict) # encapsulated as only need an instance to simualte and toss
-    stock_plate = protocol.load_labware(experiment_csv_dict['OT2 Stock Labwares'][0], experiment_csv_dict['OT2 Stock Labware Slots'][0])
-    stock_plate_rows = [well for row in stock_plate.rows() for well in row]
-    stock_plate_well_volume = stock_plate.__dict__['_well_definition']['A1']['totalLiquidVolume'] 
-    return stock_plate_well_volume
-
 def check_for_distribute(list1, min_val, max_val): 
     return(all(max_val >= x >= min_val or x == 0 for x in list1)) 
 
-def stock_well_ranges(df, limit):
+def stock_well_ranges(volume_df, limit):
     """Given a dataframe of stocks volumes to pipette, will return the ranges of indexes for the volumes
     seperated in such a way to satisfy the volume limitation of current stock labware. Ranges of the indexes are 
     provide in a 2D list with each entry consisting of a lower and a upper_well_index index. 
     A stock is identified by having the term stock or Stock in its df column.
     Note: dataframe/series indexing is a little different than list indexing """
     
-    col_names = [name for name in df.columns if "stock" in name]
+    col_names = [name for name in volume_df.columns if "stock" in name]
     ranges = []
     for col_name in col_names:
-        series = df[col_name]
+        series = volume_df[col_name]
         series_cs = series.cumsum()
         multiplier = 1
         range_list = [0]
@@ -104,6 +86,17 @@ def stock_well_ranges(df, limit):
         range_list.append(len(series_cs))
         range_list_2D = [range_list[i:i+2] for i in range(0, len(range_list), 2)]
         ranges.append(range_list_2D)
+
+    counter = 0
+    range_complete_positions = []
+    for stock_ranges, name in zip(ranges, volume_df.columns): 
+        range_position =[]
+        for r in stock_ranges: 
+            counter += 1
+            range_position.append(counter)
+        range_complete_positions.append(range_position)
+        print(name + ' position(s) = ' + str(range_position) + ' for wells ' + str(stock_ranges))
+
     return ranges
 
 
@@ -219,7 +212,7 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
                     if (small_pipette.min_volume <= volume <= small_pipette.max_volume or volume==0) and pipette == small_pipette:
                         pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never') 
 
-                    elif (large_pipette.min_volume < volume < large_pipette.max_volume) and pipette == large_pipette:
+                    elif (large_pipette.min_volume < volume) and pipette == large_pipette: # only greater than as we can do larger transfer in splits, if you only want to add once, should fil
                         pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
 
                     # switching cases
@@ -229,7 +222,7 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
                         pipette.pick_up_tip()
                         pipette.transfer(volume, stock_to_pull, well_to_dispense, new_tip = 'never')
 
-                    elif (large_pipette.min_volume < volume < large_pipette.max_volume) and pipette == small_pipette: 
+                    elif (large_pipette.min_volume < volume) and pipette == small_pipette: # only greater than as we can do larger transfer in splits
                         pipette.return_tip()
                         pipette = large_pipette
                         pipette.pick_up_tip()
@@ -295,19 +288,31 @@ def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, n
         print(line)
     return sample_final_location
 
+###################################### Require Further Testing ###################################################################################
 
+def find_max_dest_volume_labware(experiment_csv_dict, custom_labware_dict=None): # can i just simulate hardcode , custom_labware_dict
+    """Using the stock labware name from the csv, loads the appropiate labware from both 
+    a custom and the native libary and determines the maximum volume for one stock labware well. Assumes all labware is all identical."""
+    if custom_labware_dict: # Protocol encapsulated as only need an instance to simualte and toss
+        protocol = simulate.get_protocol_api('2.0', extra_labware=custom_labware_dict) # encapsulated as only need an instance to simualte and toss
+    else: 
+        protocol = simulate.get_protocol_api('2.0') 
+    stock_plate = protocol.load_labware(experiment_csv_dict['OT2 Destination Labwares'][0], experiment_csv_dict['OT2 Destination Labware Slots'][0])
+    stock_plate_rows = [well for row in stock_plate.rows() for well in row]
+    stock_plate_well_volume = stock_plate.__dict__['_well_definition']['A1']['totalLiquidVolume'] 
+    return stock_plate_well_volume
 
-
-
-
-
-
-
-
-
-
-
-
+def find_max_stock_volume_labware(experiment_csv_dict, custom_labware_dict=None): # can i just simulate hardcode , custom_labware_dict
+    """Using the stock labware name from the csv, loads the appropiate labware from both 
+    a custom and the native libary and determines the maximum volume for one stock labware well. Assumes all labware is all identical."""
+    if custom_labware_dict: # Protocol encapsulated as only need an instance to simualte and toss
+        protocol = simulate.get_protocol_api('2.0', extra_labware=custom_labware_dict) # encapsulated as only need an instance to simualte and toss
+    else: 
+        protocol = simulate.get_protocol_api('2.0') 
+    stock_plate = protocol.load_labware(experiment_csv_dict['OT2 Stock Labwares'][0], experiment_csv_dict['OT2 Stock Labware Slots'][0])
+    stock_plate_rows = [well for row in stock_plate.rows() for well in row]
+    stock_plate_well_volume = stock_plate.__dict__['_well_definition']['A1']['totalLiquidVolume'] 
+    return stock_plate_well_volume
 
 
 

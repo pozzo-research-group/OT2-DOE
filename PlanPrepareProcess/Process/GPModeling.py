@@ -24,6 +24,7 @@ from collections import Counter
 def load_datadf(path):
     df = pd.read_csv(path) 
     return df
+
 def apply_column_filter(df, column_name, min=None, max=None): 
     pass
 
@@ -75,3 +76,5 @@ def xyz_in_between_z(min_value, max_value, xl,yl,zl):
     z=np.asarray(z)[:, np.newaxis]
     
     return x[:, np.newaxis],y[:, np.newaxis],z[:, np.newaxis]
+
+def series_to_list(series):

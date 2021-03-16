@@ -98,10 +98,16 @@ def all_same(items):
     "Checks whether all elements are identical in type and value, using the initial entry as the basis of comparison"
     return all(x == items[0] for x in items)
 
-def combine_df(df1,df2):
-    df1.reset_index(drop=True)
-    df2.reset_index(drop=True)
+def combine_df_hotdog(df1,df2):
+    df1.reset_index(drop=True, inplace=True)
+    df2.reset_index(drop=True, inplace=True)
     df3 = pd.concat([df1,df2], axis=1)
+    return df3
+
+def combine_df_hamburger(df1,df2):
+    df1.reset_index(drop=True, inplace=True)
+    df2.reset_index(drop=True, inplace=True)
+    df3 = pd.concat([df1,df2], axis=0)
     return df3
 
 # also naming notation should more be "uniform" versus "lattice"
@@ -349,6 +355,20 @@ def calculate_ouzo_volumes_from_wtf(sample_conc_df, experiment_csv_dict, stock_s
     return stock_volumes_df # output in uL
 
 
+def blank_sum_to_end(complete_df, component_to_sum_names, sum_to_component):
+    composition_df = isolate_common_column(complete_df, 'concentration')
+    composition_df[sum_to_component] += composition_df[component_to_sum_names].sum(axis=1)
+    composition_df[component_to_sum_names] = 0
+    
+    return composition_df
+
+def remove_duplicates(df, sigfigs):
+    df = df.round(sigfigs)
+    df.drop_duplicates(inplace=True)
+    df.reset_index(inplace=True, drop=True)
+    
+    return df
+
 
 def total_volume_restriction_df(df, max_total_volume):
     column_names = df.columns
@@ -366,7 +386,7 @@ def general_max_restriction(df, max_value, column_name):
         raise AssertionError("No suitable samples available to create due to general filter being to low")
     return df
 
-def pipette_volume_restriction_df(df, min_pipette_volume, max_pipette_volume, pipette_restriction_YN = False):
+def pipette_volume_restriction_df(df, min_pipette_volume, max_pipette_volume, upper_restriction_YN = False):
     column_names = df.columns
     stock_column_names = [column_name for column_name in column_names if "stock" in column_name]
     df_unfiltered = df.copy()
@@ -380,20 +400,20 @@ def pipette_volume_restriction_df(df, min_pipette_volume, max_pipette_volume, pi
         if df.empty is True:
             raise AssertionError(stock_column + ' volumes are below the pipette minimum of' + str(min_pipette_volume) + 'df series printed below', df_unfiltered[stock_column])
 
-        if pipette_restriction_YN == False:
-            df = df[df[stock_column] <= max_pipette_volume] # filtering for the max_volume of a pipette
+        # Now let us filter the upper limit
+        if upper_restriction_YN == False:
+            df = df[df[stock_column] <= max_pipette_volume] 
             if df.empty is True:
                 raise AssertionError(stock_column + ' volumes are above the pipette max of' + str(max_pipette_volume) + 'df series printed below', df_unfiltered[stock_column])
-
-        if pipette_restriction_YN == len(stock_column_names):
-            YN = pipette_restriction_YN[i]
+        
+        if len(upper_restriction_YN) == len(stock_column_names):
+            YN = upper_restriction_YN[i]
             if YN == 'Y':
                 df = df[df[stock_column] <= max_pipette_volume]
                 if df.empty is True:
                     raise AssertionError(stock_column + ' volumes are above the pipette max of' + str(max_pipette_volume) + 'df series printed below', df_unfiltered[stock_column])            
      
     return df 
-
 
 
 def ethanol_wtf_water_to_density(ethanol_wtf): # MOD 
@@ -419,7 +439,6 @@ def calculate_stock_volumes(experiment_csv_dict, sample_volumes): # need to furt
     
     for i in range(len(summed_stock_volumes)):
         string = str(summed_stock_volumes[i]/1000) + ' mL of ' + stock_names[i] + ' w/ conc of ' + str(stock_concentrations[i]) + ' ' + stock_units[i]
-        print(string)
                    
 def selected_down(array, lower_index, upper_index):
     array = array[lower_index:upper_index]
@@ -498,7 +517,6 @@ def stock_molarity(total_volume, concentration, solute_mw, solute_density, solve
     Volume = L, mw = g/mol, density = g/L."""
     
 #     for solute_mw, solute_density, solute_conc # need to make conc a list argument
-    print(total_volume*1000)
     solute_moles = concentration*total_volume # mol/L * L
     solute_mass = solute_moles*solute_mw # mol*(g/mol)
     
