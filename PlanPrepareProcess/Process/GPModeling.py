@@ -76,5 +76,3 @@ def xyz_in_between_z(min_value, max_value, xl,yl,zl):
     z=np.asarray(z)[:, np.newaxis]
     
     return x[:, np.newaxis],y[:, np.newaxis],z[:, np.newaxis]
-
-def series_to_list(series):
