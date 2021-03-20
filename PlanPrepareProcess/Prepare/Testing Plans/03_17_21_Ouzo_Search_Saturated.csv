@@ -1,7 +1,7 @@
 Protocol Version,"""2.0"""
 Experimenter,"""Edwin Antonio"""
 Project Tag,"""Ouzo Reigion Scan"""
-Sample Amount,0.4
+Sample Amount,0.8
 Sample Unit,"""g"""
 Component Good Solvent Index (Only Ouzo),4
 Component Poor Solvent Index (Only Ouzo),5
@@ -12,7 +12,7 @@ Component Concentration Unit,"['wtf','wtf','wtf','wtf','wtf']"
 Component Solution vol to wt density (g/mL),"[0.79,0.79,'NA','NA','NA']"
 Component Spacing,"""linear"""
 Blank Component Concentrations (wtfs),"[0,0,0,0,1]"
-"Component Concentrations [min, max, n]","[[0.0001, 0.0001,1], [0.000035,0.000035,1], [0, 0.005,15],[0, 0.4,10]]"
+"Component Concentrations [min, max, n]","[[0.000075, 0.000075,1], [0.000035,0.000035,1], [0, 0.01,25],[0, 0.7,20]]"
 Stock Names,"['dppc-ethanol-stock', 'dspepeg2000-ethanol-stock', 'pfh-ethanol-stock','ethanol-stock', 'water-stock' ]"
 Stock Concentration Units,"[ 'molarity','molarity','wtf', 'wtf','wtf']"
 "Stock Search Concentrations [min, max, n]","[[0.002724647, 0.002724647,1], [0.000356443,0.000356443, 1], [0.005, 0.020,8] , [1,1,1], [1,1,1]]"
