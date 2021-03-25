@@ -173,6 +173,7 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
         small_pipette = right_pipette
         large_pipette = left_pipette
 
+    
     ###### Here should be the stopping point and decide where thing deviate? 
 
     ## Is there no assertion error to check if labwares are big enough for volumes????
@@ -201,7 +202,8 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
                 pipette = large_pipette        
                 
             pipette.pick_up_tip()
-
+            
+            print(pipette.flow_rate.dispense)
             # here is where you do conditionals like if all within this range then just use distribbute
             if check_for_distribute(volumes_to_pipette, pipette.min_volume, pipette.max_volume) == True: # the issue with this it might be very wasteful and require more stock since buffers, we already delt with ranges so we should be good on that
                pipette.distribute(volumes_to_pipette, stock_to_pull, dest_wells[lower_well_index:upper_well_index], new_tip = 'never')
@@ -250,6 +252,9 @@ def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, n
     left_pipette = loaded_dict['Left Pipette']
     right_pipette = loaded_dict['Right Pipette']
 
+    left_pipette.flow_rate.dispense = experiment_dict['OT2 Single Transfer Left Pipette Dispense Rate (uL/sec)']
+    right_pipette.flow_rate.dispense = experiment_dict['OT2 Single Transfer Right Pipette Dispense Rate (uL/sec)']
+
     # Remember we initialize pipettes as large and small is because we want to have the highest precision possible!
     if left_pipette.max_volume < right_pipette.max_volume:
         small_pipette = left_pipette 
@@ -281,7 +286,10 @@ def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, n
     # dest_wells_selected = dest_wells[0:number_of_wells]
 
     sample_final_location = []
+    
     for well_index in range(number_of_samples):
+        pipette.flow_rate.dispense = 50
+        print(pipette.flow_rate.dispense)
         pipette.transfer(transfer_volume, dest_wells[well_index], final_transfer_wells[well_index], new_tip = 'always') 
         sample_final_location.append(final_transfer_wells[well_index])
     for line in protocol.commands(): 
