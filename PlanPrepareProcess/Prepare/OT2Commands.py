@@ -1,14 +1,14 @@
-import glob # these are fine since simple and native to python loaded on opentrons, but avoid using any large modules like matplotlib as unable to load onto raspi on ot2. 
+import glob
 import os
 import json
 import opentrons.simulate as simulate
 
-def custom_labware_dict(labware_dir_path): # make it so it redirects back to original path
+def custom_labware_dict(labware_dir_path): 
     """Given the path of a folder of custom labware .json files will create dict
     of key = name and value = labware definition to be loaded using protocol.load_labware_from_definition 
     versus typical protocol.load_labware"""
     original_working_dir = os.getcwd()
-    os.chdir(labware_dir_path) # instead of changing the dir entirely can one not just a with or a read?
+    os.chdir(labware_dir_path) 
     labware_dict = {}
     for file in glob.glob("*.json"):
         with open(file) as labware_file:
@@ -17,9 +17,6 @@ def custom_labware_dict(labware_dir_path): # make it so it redirects back to ori
             labware_dict[labware_name] = labware_def
     os.chdir(original_working_dir)
     return labware_dict 
-
-def determines_stock_setup(protocol, experiment_dict, sample_volumes_df):
-    pass
 
 def object_to_well_list(protocol, labware_object_names, labware_object_slots):
     """Loads the labware specfied in the list arguments with the respective slots. This labware is tied 
@@ -106,9 +103,7 @@ def loading_labware(protocol, experiment_dict):
     containing the important object instances to be used in subsequent functions alongside the original protocol instance."""
     
     protocol.home() 
-    
-    #Initializing run according to API - Is this truly necessary? I think the homing is necessary as with an execute protocol whenever first used it will look for the call of the homing method. 
-    
+      
     api_level = '2.0'
     
     metadata = {
@@ -164,7 +159,7 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
     left_pipette = loaded_dict['Left Pipette']
     right_pipette = loaded_dict['Right Pipette']
 
-    # Label pipettes to know which is ideal, higher resolution always desired (i.e smaller pipette if allowable)
+    # Label pipettes to know which is ideal, higher resolution always desired (i.e smaller pipette if allowable), this might become its own function
     if left_pipette.max_volume < right_pipette.max_volume:
         small_pipette = left_pipette 
         large_pipette = right_pipette
@@ -174,10 +169,6 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
         large_pipette = left_pipette
 
     
-    ###### Here should be the stopping point and decide where thing deviate? 
-
-    ## Is there no assertion error to check if labwares are big enough for volumes????
-
     ## function to check prior if volumes are inbetween .min/max_volume and pipettes are appropiate
     stock_volumes = rearrange_2D_list(stock_volumes_df.values) # change so it grabs per column and not have to use this function
     info_list = []
@@ -203,7 +194,6 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
                 
             pipette.pick_up_tip()
             
-            print(pipette.flow_rate.dispense)
             # here is where you do conditionals like if all within this range then just use distribbute
             if check_for_distribute(volumes_to_pipette, pipette.min_volume, pipette.max_volume) == True: # the issue with this it might be very wasteful and require more stock since buffers, we already delt with ranges so we should be good on that
                pipette.distribute(volumes_to_pipette, stock_to_pull, dest_wells[lower_well_index:upper_well_index], new_tip = 'never')
@@ -233,10 +223,9 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
             info = wells_to_dispense
             info_list.append(info)
             pipette.drop_tip()
-    # print('This is Stock ' + str(stock_tracker) + ' at position ' + str(stock_well_index))
     for line in protocol.commands(): # Remember that this command prints all of the previous stuff with it so if in a loop will print the whole history
         print(line)     
-    return {'info concat':info_list}
+    return info_list[0]
 
 
 
@@ -273,7 +262,6 @@ def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, n
     transfer_volume = float(experiment_dict['OT2 Single Transfer From Dest Volume (uL)'])
     bottom_dispensing_clearence = experiment_dict['OT2 Single Transfer From Dest Bottom Dispensing Clearance (mm)']
 
-    # check to make sure enough wells to transfer into
     assert len(final_transfer_wells) >= number_of_samples, 'The number of samples is exceeds the number of final destination wells'
 
     # make this bit into a function since commonly called 
@@ -282,14 +270,10 @@ def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, n
     elif large_pipette.min_volume <= transfer_volume <= large_pipette.max_volume:
         pipette = large_pipette  
         
-    # final_transfer_wells_selected = final_transfer_wells[0:number_of_wells]
-    # dest_wells_selected = dest_wells[0:number_of_wells]
 
     sample_final_location = []
     
     for well_index in range(number_of_samples):
-        pipette.flow_rate.dispense = 50
-        print(pipette.flow_rate.dispense)
         pipette.transfer(transfer_volume, dest_wells[well_index], final_transfer_wells[well_index], new_tip = 'always') 
         sample_final_location.append(final_transfer_wells[well_index])
     for line in protocol.commands(): 

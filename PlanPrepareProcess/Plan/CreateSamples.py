@@ -1,3 +1,4 @@
+# All of these run fine on OT2 - avoid matplotlib or scipy
 import numpy as np
 import pandas as pd
 from opentrons import simulate, execute, protocol_api
@@ -9,27 +10,11 @@ from pytz import timezone
 import csv
 
 """Common terms/info: 
-    wtf = weight fraction
     2D list or nested list = [[a,b,c], [e,f,g]]
     
     Unless otherwise stated:
     - The order of list or array should be assumed to match that of its naming list or arrays. For example if stock_concentrations = [0.1, 0.5, 1] with stock_names = [A, B, C], stock_unit = ['wtf', 'wtf', 'wtf'] then stock A = 1 wtf, B = 0.5 wtf and so on.
-    - Volumes are defaulted to microliters (default unit of opentrons) 
-    
-
-    
-    Other notes: 
-       - Currently each component has its own respective stock that only has most one solvent. Working on modifying the component logic to allow for automatic search of components and match them with respective stock, issue I can already see arising is when one component is present in more than one stock how to assign proirity. 
-       - Could make add information to the final wrapper dictionary of component order like entries like "component sample order" and "component array units" - shows for future use of allowing more units - something slowly working on through looking at flowthrough. 
-       - To keep general do not use wrappers to wrap multiple functions unless it is something simple thing like reordering that you do not want to clog up. 
-       - Have the information from the CSV clear what format it should be in
-      
-       - Work on looking at the flowthrough and how you would add geenralizations, what is currently constrained? What units can be come what units and what cannot be
-       converted and how will effect/how will you need to change the functions you currently have? Are there specfic cases that one should avoid or are difficult to exper. 
-       - Once you do this you will see how you will need to change the notation and names of vairables to unrestrict
-
-       go through and add quick explanation up here for her function 
-
+    - Volumes are defaulted to microliters (default unit of opentrons)
     """
 
 def get_experiment_plan(filepath):
@@ -244,12 +229,6 @@ def prepare_stock_search(stock_canidates, experiment_csv_dict, wtf_sample_canida
   
     return prepare_stock_dict
 
-
-
-
-    
-# when calculating volumes need to add "catchers" to allow user to be informed of why search/exe failed (not enough of component b, volume to small etc..)  
-# In reality this should be called something like mixing with common solvents, but sure since other volume calculating function in place to deal with non common solvent mixing cases
 def calculate_ouzo_volumes_from_wtf(sample_conc_df, experiment_csv_dict, stock_searching = False, stock_searching_concentration = None):
     """ This specfic volume function uses the stock concentration and sample concentration to calculate volumes for each stock to create a sample.
     For this case of Ouzo calculations, it is assumed the 2nd to last entry (in all things name, unit, concentration value) is the common solvent for all things prior to the second to last entry,
@@ -459,9 +438,8 @@ def create_df(info_list, wtf_samples, experiment_csv_dict, unique_identifier = N
     general_component_header = []
     experiment_component_header = []
 
-    for i in range(len(component_names)):
-        general_component_header.append('Component ' + str(i+1) + ' wtf')
-        experiment_component_header.append(component_names[i] + ' wtf')
+
+
 
     complete_header = UID_header + general_component_header + slot_header + labware_header + well_header
     complete_experiment_header = UID_header + experiment_component_header + well_header + labware_header + slot_header
@@ -548,24 +526,6 @@ def stock_wtf(total_mass, solute_wtf, solvent_wtf, solute_density, solvent_densi
            'solvent mass g': solvent_mass,
            'solvent volume L': solvent_volume}
 
-def stock_mgperml(total_volume, solute_wtf, solvent_wtf, solute_density, solvent_density):
-    """Calculates the mass and volumes of solutes and solvents of stock solution with concentration in terms of mg/mL.
-    Currently only binary mixtures, will generalize by making solute information list.
-    Volume = L, mw = g/mol, density = g/L."""
-    pass
-
-def stock_volf(total_volume, solute_wtf, solvent_wtf, solute_density, solvent_density):
-    """Calculates the mass and volumes of solutes and solvents of stock solution with concentration in terms of volf.
-    Currently only binary mixtures, will generalize by making solute information list.
-    Volume = L, mw = g/mol, density = g/L."""
-    pass
-
-def stock_molf(total_volume, solute_wtf, solvent_wtf, solute_density, solvent_density):
-    """Calculates the mass and volumes of solutes and solvents of stock solution with concentration in terms of molf.
-    Currently only binary mixtures, will generalize by making solute information list.
-    Volume = L, mw = g/mol, density = g/L."""
-    pass
-    
 def bimixture_density_wtf(comp1_wtf, comp1_density, comp2_density):
     """This is only to be used a very rough estimate if not density data is available for a binary mixture. 
     The information is useful in cases when calculating mass estimate for wtf calculation, since you need to convert a 
@@ -652,73 +612,24 @@ def isolate_common_column(df, common_string):
     final_df = df.copy()[common_string_cols]
     return final_df
 
-################### FIX OR INTEGRATE ###########################################################
+############ IN PROGRESS ####################
 
-def add_blank_sample(sample_concs, sample_volumes, blank_total_volume, blank_component_concs):
-    """Allows for the addition of a blank sample at the end of both the concentration and volume arrays that one has selected for experimentation, returns both modified arrays. Blank sample units and order of components are assumed to the same as those of other all other samples. Blank total volume left as non-csv-dependent input as this could change with the selected stock conidate/experiment conditions and is up to the user to decide which is the most appropiate.
-    
-    CSV Pulled Information: make it pulled but dont make it dependent on a wrapper - keep it indepdenent
-    - blank_component_wtfs = 'Blank Component Concentrations (wtfs)' : an array of the concentration of the blank sample, which by default will be in the same units as the sample_wtfs. 
-   """
-    
-    blank_component_volumes = []
-    for component_composition in blank_component_concs:
-        volume = component_composition*blank_total_volume
-        blank_component_volumes.append(volume)
-    blank_concs_array = np.asarray([blank_component_concs])
-    blank_volume_array = np.asarray([blank_component_volumes])
-    blank_and_sample_concs = np.concatenate((sample_concs, blank_concs_array))
-    blank_and_sample_volumes = np.concatenate((sample_volumes, blank_volume_array))
-    return blank_and_sample_concs, blank_and_sample_volumes
-    
-def calculate_stock_volumes_simple_volf_mix(sample_conc_canidates, experiment_csv_dict):
-    total_sample_mass = experiment_csv_dict['Sample Mass (g)']
-    component_names = experiment_csv_dict['Component Shorthand Names']
-    component_units = experiment_csv_dict['Component Concentration Unit']
-    component_densities = experiment_csv_dict['Component Density (g/mL)']
-    component_mws = experiment_csv_dict['Component MW (g/mol)']
-    component_sol_densities = experiment_csv_dict['Component Solution vol to wt density (g/mL)']
-    stock_names = experiment_csv_dict['Stock Names']
+def stock_mgperml(total_volume, solute_wtf, solvent_wtf, solute_density, solvent_density):
+    """Calculates the mass and volumes of solutes and solvents of stock solution with concentration in terms of mg/mL.
+    Currently only binary mixtures, will generalize by making solute information list.
+    Volume = L, mw = g/mol, density = g/L."""
+    pass
 
+def stock_volf(total_volume, solute_wtf, solvent_wtf, solute_density, solvent_density):
+    """Calculates the mass and volumes of solutes and solvents of stock solution with concentration in terms of volf.
+    Currently only binary mixtures, will generalize by making solute information list.
+    Volume = L, mw = g/mol, density = g/L."""
+    pass
 
-
-def filter_samples(wtf_samples_canidates, volume_sample_canidates, min_vol, max_vol):
-    """Filters samples based on volume restriction and matches up with previously created wtf sample canidates, 
-    returning an updated list of wtf canidates AND volume canidates"""
-    
-    filtered_volumes = []
-    filtered_wtf = []
-    filtered_out = [] # optional just add an append in an else statement
-    
-    for sample_wtfs, sample_vols in zip(wtf_samples_canidates, volume_sample_canidates):
-        if check_volumes(sample_vols, min_vol, max_vol) == True: # could say samples_vols[:-1], essentially two checks at once, check from sample_vols[:-1] if min_vol, max_vol =optional - change in funtion, and also if samples_vols[-1] 
-            filtered_volumes.append(sample_vols)
-            filtered_wtf.append(sample_wtfs)
-    
-    volume_checking_list = [sum(volume) for volume in filtered_volumes]
-    min_sample_volume = min(volume_checking_list)
-    max_sample_volume = max(volume_checking_list)
+def stock_molf(total_volume, solute_wtf, solvent_wtf, solute_density, solvent_density):
+    """Calculates the mass and volumes of solutes and solvents of stock solution with concentration in terms of molf.
+    Currently only binary mixtures, will generalize by making solute information list.
+    Volume = L, mw = g/mol, density = g/L."""
+    pass
     
 
-    return (filtered_wtf, filtered_volumes, min_sample_volume, max_sample_volume)
-    
-
-
-def experiment_sample_dict(experiment_plan_path, min_input_volume, max_input_volume): 
-    """A wrapper for functions required to create ouzo samples, where final information is presented in returned dictionary. EXPLAIN THE WALKTHROUGH OF THIS STEP BY STEP ALLOWING SOMEONE TO FOLLOW  """
-    experiment_plan_dict = get_experiment_plan(experiment_plan_path)
-    wtf_sample_canidates = generate_candidate_lattice_concentrations(experiment_plan_dict)
-    volume_sample_canidates = calculate_ouzo_volumes_from_wtf(wtf_sample_canidates, experiment_plan_dict)
-    
-    # now filter volume min no max for all but water, but min and max for water - but should not have to input volume should just be based on pipettes
-    
-    filtered_wtf_samples, filtered_volume_samples, min_sample_volume, max_sample_volume = filter_samples(wtf_sample_canidates, volume_sample_canidates, min_input_volume, max_input_volume)
-    
-    experiment_info_dict = {'experiment_plan_dict': experiment_plan_dict,
-                           'wtf_sample_canidates': wtf_sample_canidates,
-                           'volume_sample_canidates': volume_sample_canidates,
-                           'filtered_wtf_samples': filtered_wtf_samples,
-                           'filtered_volume_samples': filtered_volume_samples, 
-                           'Minimum Sample volume (uL)': min_sample_volume, 
-                           'Maximum Sample volume (uL)': max_sample_volume}
-    return experiment_info_dict
