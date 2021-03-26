@@ -1,7 +1,11 @@
 # OT2-DOE
 A group of python modules and notebooks made for high throughput measurement and analysis of samples made through a liquid handling robot (Opentrons or OT2). 
 
-    Note: As of 03/25/21 this repo is still being developed with new functions, bugs and documentation updated constantly. Feel free to address issues in the issues tab or edit them yourself so long as you document and justify the change. Current the framework is still not entirely up and running as testing allows for adaptation for the groups use. 
+    Note: As of 03/25/21 this repo is still being developed with new functions, bugs and documentation updated constantly. 
+    Feel free to address issues in the issues tab or edit them yourself so long as you document and justify the change. 
+    Currently the framework is still not entirely up and running as testing allows for adaptation for the groups use. 
+
+Here is an example where this framework could be implemented for increased discovery. 
 
 ![image](https://user-images.githubusercontent.com/52507997/112563961-91c33680-8d97-11eb-890d-1a637d8c0f24.png)
 
@@ -14,7 +18,7 @@ Automatic handling robots (ALH) are one of many high throughput tools that allow
 
 ## DOE Package Framework:
 
-### Prepare: This package contains modules which are relate to planning and preparing
+### Prepare: This package contains modules which are relate to planning and preparing samples compositions, volumes, stocks and other information prior to OT2 commands. 
 
 
 #### The python package adopts the following two techniques to obtain the temperature profile of the samples and sample holder to determine the melting point of the samples:
