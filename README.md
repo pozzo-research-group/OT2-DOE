@@ -1,4 +1,4 @@
-# phasIR
+# OT2-DOE
 A group of python modules and notebooks made for high throughput measurement and analysis of samples made through a liquid handling robot (Opentrons or OT2). 
 
     Note: As of 03/25/21 this repo is still being developed with new functions, bugs and documentation updated constantly. Feel free to address issues in the issues tab or edit them yourself so long as you document and justify the change. Current the framework is still not entirely up and running as testing allows for adaptation for the groups use. 
