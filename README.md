@@ -18,7 +18,18 @@ Automatic handling robots (ALH) are one of many high throughput tools that allow
 
 ## DOE Package Framework:
 
-### Prepare: This package contains modules which are relate to planning and preparing samples compositions, volumes, stocks and other information prior to OT2 commands. 
+### Prepare: This package contains is to modules which are related to planning the experimental space such as samples compositions, volumes, stocks info and other information prior to OT2 commands. 
+
+Currently the workflow of experimental planning in a notebook is generally as follows:
+	1.) A csv or excel file is loaded as a dictionary. This file will contain all the instructions for both the planning of the experimental space along with the information regarding OT2 specfication. 
+	    
+- What follows is 
+
+
+Current module: 
+	- CreateSamples: Contains an array of functions from usef
+
+
 
 
 #### The python package adopts the following two techniques to obtain the temperature profile of the samples and sample holder to determine the melting point of the samples:
