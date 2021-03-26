@@ -13,10 +13,15 @@ Here is an example where this framework could be implemented for increased disco
 ## Introduction
 Automatic handling robots (ALH) are one of many high throughput tools that allow for increases discovery of solution based chemistry. If it can be moved by a human using a pipette a ALH can do the same function faster and more reproducible. Our ALH being used is the Opentrons 2, a low cost ALH which has interchangable pipette modules, custom labware, and is controlled through Python. High throuhgput synthesis and charecterization of these solution based systems requires an organized framework consisting of planning, processing and presentation modules. Under all of this is the whole premise for a framework for a design of experiments. The packages and adjacent notebook start this frame work with the main three packages consisting of **Prepare**, **Process**, and **Present**. Each package can contain multiple modules which are relvant to that specfic process such as a module for a processing plate reader data, or a module revovling around prapring sample volumes. In theory these packages should get you from the point of planning an experiment all the way to modeling and presenting the information. 
 
-## Installation
-    Note: These modules are to be placed in a package which should be installed thorugh a simple command -- in progess...
+## To get started
+* Install python version 3.0 + 
+* Optional: Install gitbash 
+* Clone the repository on your machine using 'git clone https://github.com/pozzo-research-group/OT2-DOE.git' in your command prompt, Anaconda prompt or gitbash. This will create a copy of this repository on your machine.
+* For now: Open a notebook in the PlanPrepareProcess directory.
+* Future: Install as part of a package
 
 ## DOE Package Framework:
+
 
 ### Plan: This package contains is to modules which are related to planning the experimental space such as samples compositions, volumes, stocks info and other information prior to OT2 commands. 
 
@@ -51,37 +56,14 @@ The proposed framework of OT2 commands is as follows:
 	* Determining the range of wells of that will cover a specfic stock position, this is can be outside of the function to verify. `OT2Commands.stock_ranges()` does this by looking at the max volume (or user input if not utilziing max volume) volume of the stock labware and the volumes to pipette and returns the stock arrangement (i.e. 2 stocks A, one stock B, in row order). 
 	* Select whether a transfer or dispense option is appropiate. 
 4. IMPORTANT: Using the information of the dispensed well, record this information and add it to the dataframe in someway. Currently a function exist that will take information of a well that is formatted `A1 of Falcon 48 Well Plate 1500 ÂµL on 2` and is spliced for the well, slot and plate information, given the time and a user-specified keyword a UID is made as well. 
+5. Once you have added the pipetting/final sample information to the original complete dataframe (which contained the compoisitons and volumes), the DataFrame is now complete for the experimental portion and can now be exported and saved. 
+6. Broken: Google Drive implementation, the issue around credentials is tricky since each person would need their own...module currently exist with working function but more documentation and testing is needed. 
 	
 ### Process: This package contains is to modules which are related to preparing the samples created in the planning phase. 
 
+This package with primarily hold instrumentation and modeling modules with functions relating directly to the extracting, organizing and processing the information from these instruments. 
 
-
-#### The python package adopts the following two techniques to obtain the temperature profile of the samples and sample holder to determine the melting point of the samples:
-
-1. Temperature profile through edge detection
-
-* This method can be used for images(video frames) with high contrast and minimal noise which will allow for detection of edges of just the samples.
-* The temperature profile of the samples and plate is determined by detecting the edges, filling and labeling them, and monitoring the temperature at their centroids.
-* This technique can be adapted by using the functions `input_file` and `centroid_temp` from the `musicalrobot.edge_detection` module to load the recorded video and obtain the temperature profile of the samples and sample holder.
-
-2. Temperature profile through pixel value analysis.
-
-* This is an alternative technique for low contrast images(video frames). In some situations, the contrast between the image and sample maybe too low for edge detection, even with contrast enhancement.
-* Alternatively, centroid location for each sample can be found by summing pixel values over individual rows and columns of the sample holder(well plate).
-* This technique can be adapted by using the functions `input_file` and `pixel_temp` from the `musicalrobot.pixel_analysis` module to load the recorded video and obtain the temperature profile of the samples and sample holder.
-
-#### Melting point determination
-
-* An inflection is observed at the melting point in the temperature profile of the samples due to the following reasons
-1. Change in thermal conductivity of the sample
-2. Increase in thermal contact between the sample and the well plate
-* The point of inflection in the temperature profile is determined by detecting the peak in the second derivative of the temperature profile. Since an analytical approach is used to determine the melting point, the temperature profile plots have to classified to eliminate plots with noise and without an inflection in them.
-* The module `musicalrobot.data_encoding` can be used to classify the temperature profiles.
-
-An example of adapting the above mentioned modules and functions using the `musicalrobot` package can be found in the ipython notebook `Tutorial.ipynb` found in the examples folder.
-
-## For Development
-* Install python version 3.6
-* Clone the repository on your machine using git clone https://github.com/pozzo-research-group/phasIR.git . This will create a copy of this repository on your machine.
-* Go to the repository folder using cd musical-robot.
-* Install the python dependencies by using pip install -r requirements.txt
+Example of this include modules for: 
+* Microplate Reader (PlateReader): Works with data from the microplate reader, extracting from excel file formatting as dataframe and adding it to the appropiate DataFrame from the **Preparing** step. Would also contain functions to handle these dataframe structures such as extracting a spectra dataframe from the overall dataframe based on a unit keyword or plotting these crudely. 
+* Dynamic Light Scatter Zetasizer (DynamicLightScatter): 
+* Gaussian Process Regression Modeling (GPModeling): 
