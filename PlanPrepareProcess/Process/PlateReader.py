@@ -50,7 +50,7 @@ def add_abs_to_sample_info(sample_info_df, abs_df):
     combined_df = pd.concat([sample_info_df, abs_df], axis = 1)
     return combined_df
 
-def rehead_wavelengths(sampleinfo_df, platereader_df, add_unit = 'nm'):
+def rehead_wavelengths(platereader_df, add_unit = 'nm'):
     
     platereader_df = platereader_df.copy() # because dataframes reference past definition, especially important when deleting/modifying things
     wavelengths = list(platereader_df.loc['Wavelength'])
