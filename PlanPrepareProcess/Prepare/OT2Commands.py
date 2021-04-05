@@ -97,6 +97,37 @@ def stock_well_ranges(volume_df, limit):
     return ranges
 
 
+def determine_pipette_resolution(loaded_dict):
+    """Given the opentrons only uses two pipettes one as always designated as a small or large pipette to ensure a wide range 
+    of volumes is covered. We designate one as small and one as large to ensure we are using the highest precision possible"""
+    
+    left_pipette = loaded_dict['Left Pipette']
+    right_pipette = loaded_dict['Right Pipette']
+
+    if left_pipette.max_volume < right_pipette.max_volume:
+        small_pipette = left_pipette 
+        large_pipette = right_pipette
+
+    if left_pipette.max_volume > right_pipette.max_volume:
+        small_pipette = right_pipette
+        large_pipette = left_pipette
+
+    loaded_dict['Small Pipette'] = small_pipette
+    loaded_dict['Large Pipette'] = large_pipette
+
+    return loaded_dict
+
+def pipette_check(volumes_df, pipette_1, pipette_2):
+    """Given volumes along with two pipettes in use, will ensure the volumes of the pipette ranges are able to be cover the volumes"""
+    volume_df_checked = volume_df[(volume_df==0)|(volume_df > pipette_1.min)|(volume_df < pipette_1.max)|(volume_df > pipette_2.min)|(volume_df < pipette_2.max)]
+    
+    assert len(volume_df) == len(volume_df_checked), 'Pipettes do not cover appropiate volumes'
+
+
+def labware_check():
+    """Will check prior to simulation if labware is appropiate for volumes"""
+
+
 def loading_labware(protocol, experiment_dict):
     """ Loads the required labware given information from a loaded csv dictionary. The labware, which
     include pipettes, plates and tipracks are tied to the protocol object argurment. Returned is a dcitonary 
@@ -150,7 +181,7 @@ def loading_labware(protocol, experiment_dict):
     return loaded_labware_dict # even if there was a way to call from protocol object would need to rename all over aagin
 
 
-def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges):
+def pipette_volumes_component_wise(protocol, loaded_dict, stock_volumes_df, stock_ranges):
     """ Given the protocol used to set up the loaded labware dict, along with the volumes to pipette will send transfer commands to the ot2.
     The volumes fed as a 2D list where each sublist is the the volumes for one stock. Ranges are fed similar """
     
@@ -228,6 +259,11 @@ def pipette_stock_volumes(protocol, loaded_dict, stock_volumes_df, stock_ranges)
     return info_list[0]
 
 
+def pipette_volumes_sample_wise(protocol, volumes_df, loaded_dict):
+    """A pipetting strategy which results in samples being made one by one rather than a component being added completely to all samples first.
+    The component is added single and has its pipette parked back to use for the other samples."""
+
+
 
 def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, number_of_samples):
     """This function will take the already loaded dictionary and load more labware, specfically made for a final transfer from the destination sample plates to another plate. 
@@ -281,6 +317,17 @@ def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, n
     return sample_final_location
 
 ###################################### Require Further Testing ###################################################################################
+
+def range_gap(small_pipette, pipette_2):
+    if p1_max >= p2_min:
+        print('Pipette range complete')
+    else: 
+        print('Pipette Range Incomplete, gap exist between following volumes:', p1_max, 'and', p2_min)
+
+
+# so the small_pipette max should be within or at least at the edge of the large_pipette_min, and
+
+
 
 def find_max_dest_volume_labware(experiment_csv_dict, custom_labware_dict=None): # can i just simulate hardcode , custom_labware_dict
     """Using the stock labware name from the csv, loads the appropiate labware from both 
