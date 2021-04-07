@@ -92,7 +92,7 @@ def combine_df_hotdog(df1,df2):
 def combine_df_hamburger(df1,df2):
     df1.reset_index(drop=True, inplace=True)
     df2.reset_index(drop=True, inplace=True)
-    df3 = pd.concat([df1,df2], axis=0)
+    df3 = pd.concat([df1,df2], axis=0, ignore_index=True)
     return df3
 
 # also naming notation should more be "uniform" versus "lattice"

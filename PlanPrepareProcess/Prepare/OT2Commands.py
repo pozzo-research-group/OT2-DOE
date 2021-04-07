@@ -18,23 +18,6 @@ def custom_labware_dict(labware_dir_path):
     os.chdir(original_working_dir)
     return labware_dict 
 
-def object_to_well_list(protocol, labware_object_names, labware_object_slots):
-    """Loads the labware specfied in the list arguments with the respective slots. This labware is tied 
-    to the loaded protocol (global). Once the labware is loaded a concatenated list of the all labwares is created
-    in order of the object in the initally loaded list."""
-    
-    labware_objects = [] # labware objects
-    for labware_name, labware_slot in zip(labware_object_names, labware_object_slots):
-        labware_object = protocol.load_labware(labware_name, labware_slot)
-        labware_objects.append(labware_object)
-    
-    all_wells_row_order = [] 
-    for labware in labware_objects:
-        rows = [well for row in labware.rows() for well in row]
-        all_wells_row_order = all_wells_row_order + rows
-    
-    return all_wells_row_order
-
 def object_to_object_list(protocol, stock_object_names, stock_object_slots):
     """Loads the labware specfied in the list arguments with the respective slots. This labware is tied 
     to the loaded protocol (global)."""
@@ -45,6 +28,17 @@ def object_to_object_list(protocol, stock_object_names, stock_object_slots):
         labware_objects.append(labware_object)
    
     return labware_objects
+
+def object_list_to_well_list(labware_objects):
+    """Labware list loaded is made into concatenated list of the all labwares
+    in order of the object in the initally loaded list."""
+    
+    all_wells_row_order = [] 
+    for labware in labware_objects:
+        rows = [well for row in labware.rows() for well in row]
+        all_wells_row_order = all_wells_row_order + rows
+    
+    return all_wells_row_order
 
 def rearrange_2D_list(nth_list):
     """Rearranges information from a 2D_list of length m with entries of length n to an outer array of length n, with entries of length m. Each entry now holds the ith entry of original entry in a new entry.
@@ -60,15 +54,17 @@ def rearrange_2D_list(nth_list):
 def check_for_distribute(list1, min_val, max_val): 
     return(all(max_val >= x >= min_val or x == 0 for x in list1)) 
 
-def stock_well_ranges(volume_df, limit):
+def stock_well_ranges(loaded_dict, volume_df, limit):
     """Given a dataframe of stocks volumes to pipette, will return the ranges of indexes for the volumes
     seperated in such a way to satisfy the volume limitation of current stock labware. Ranges of the indexes are 
     provide in a 2D list with each entry consisting of a lower and a upper_well_index index. 
     A stock is identified by having the term stock or Stock in its df column.
     Note: dataframe/series indexing is a little different than list indexing """
     
+    # will only require protocol if you want to call the 
     col_names = [name for name in volume_df.columns if "stock" in name]
-    ranges = []
+    stock_info_to_pull = {}
+    
     for col_name in col_names:
         series = volume_df[col_name]
         series_cs = series.cumsum()
@@ -78,44 +74,78 @@ def stock_well_ranges(volume_df, limit):
             limit_m = limit*multiplier
             if entry>limit_m:
                 multiplier = multiplier + 1
-                range_list.append(index)
+                range_list.append(index) # doubled on purpose
                 range_list.append(index)
         range_list.append(len(series_cs))
         range_list_2D = [range_list[i:i+2] for i in range(0, len(range_list), 2)]
-        ranges.append(range_list_2D)
+        stock_info_to_pull[col_name]= {'Ranges':range_list_2D}
 
-    counter = 0
-    range_complete_positions = []
-    for stock_ranges, name in zip(ranges, volume_df.columns): 
-        range_position =[]
-        for r in stock_ranges: 
-            counter += 1
-            range_position.append(counter)
-        range_complete_positions.append(range_position)
-        print(name + ' position(s) = ' + str(range_position) + ' for wells ' + str(stock_ranges))
+    
+    
+    # Now let us add the information of stock position  
+    stock_labware_wells = loaded_dict['Stock Wells']
+    stock_position_index = 0
+    for col in col_names:
+        add_positions_dict = stock_info_to_pull[col]
+        ranges = add_positions_dict['Ranges']
+        stock_wells_to_pull = []
+        for r in ranges:
+            stock_well = stock_labware_wells[stock_position_index]
+            stock_wells_to_pull.append(stock_well)
+            stock_position_index += 1
+        add_positions_dict['Stock Wells'] = stock_wells_to_pull
+ 
+    return stock_info_to_pull
 
-    return ranges
-
+def determine_pipette_tiprack(volume, small_pipette, small_tiprack, large_pipette, large_tiprack): 
+    if small_pipette.min_volume <= volume <= small_pipette.max_volume or volume == 0:
+        pipette = small_pipette
+        tiprack = small_tiprack
+    elif large_pipette.min_volume <= volume <= large_pipette.max_volume:
+        pipette = large_pipette   
+        tiprack = large_tiprack
+    return pipette, tiprack
 
 def determine_pipette_resolution(loaded_dict):
     """Given the opentrons only uses two pipettes one as always designated as a small or large pipette to ensure a wide range 
     of volumes is covered. We designate one as small and one as large to ensure we are using the highest precision possible"""
     
     left_pipette = loaded_dict['Left Pipette']
-    right_pipette = loaded_dict['Right Pipette']
+    left_tiprack = loaded_dict['Left Tiprack Wells']
+    right_pipette= loaded_dict['Right Pipette']
+    right_tiprack = loaded_dict['Right Tiprack Wells']
+
 
     if left_pipette.max_volume < right_pipette.max_volume:
         small_pipette = left_pipette 
+        small_tiprack = left_tiprack
         large_pipette = right_pipette
+        large_tiprack = right_tiprack
 
     if left_pipette.max_volume > right_pipette.max_volume:
         small_pipette = right_pipette
+        small_tiprack = right_tiprack
         large_pipette = left_pipette
+        large_tiprack = left_tiprack
 
     loaded_dict['Small Pipette'] = small_pipette
     loaded_dict['Large Pipette'] = large_pipette
+    loaded_dict['Small Tiprack'] = small_tiprack
+    loaded_dict['Large Tiprack'] = large_tiprack
 
     return loaded_dict
+
+
+def find_stock_to_pull(stock_name, well_index, stocks_position_dict): # could generalize and could work for pipette tips
+    stock_position_info = stocks_position_dict[stock_name]
+    well_ranges = stock_position_info['Ranges']
+    stock_positions = stock_position_info['Stock Wells']
+    
+    for stock_position, well_range in zip(stock_positions, well_ranges): 
+        if well_range[0] <= well_index <= well_range[1]: # so even though potentially two true results the first one always wins beceause list of ranges in order, see if you can make it so only one true result exist
+            return stock_position
+    else:
+        raise AssertionError('Well is not covered by current stock, please verify stock well ranges.')
 
 def pipette_check(volumes_df, pipette_1, pipette_2):
     """Given volumes along with two pipettes in use, will ensure the volumes of the pipette ranges are able to be cover the volumes"""
@@ -145,28 +175,33 @@ def loading_labware(protocol, experiment_dict):
 
     # Loading labwares: All concatenated list of wells in order of the provided name/slot
     
-    dest_plate_names = experiment_dict['OT2 Destination Labwares']
-    dest_plate_slots = experiment_dict['OT2 Destination Labware Slots']
-    dest_wells = object_to_well_list(protocol, dest_plate_names, dest_plate_slots)
+    dest_labware_names = experiment_dict['OT2 Destination Labwares']
+    dest_labware_slots = experiment_dict['OT2 Destination Labware Slots']
+    dest_labware_objects = object_to_object_list(protocol, dest_labware_names, dest_labware_slots)
+    dest_wells = object_list_to_well_list(dest_labware_objects)
     
     stock_labware_names = experiment_dict['OT2 Stock Labwares']
     stock_labware_slots = experiment_dict['OT2 Stock Labware Slots']
-    stock_wells = object_to_well_list(protocol, stock_labware_names, stock_labware_slots)
+    stock_labware_objects = object_to_object_list(protocol, stock_labware_names, stock_labware_slots)
+    stock_wells = object_list_to_well_list(stock_labware_objects)
     
     # Loading pipettes and tipracks
     
     right_tiprack_names = experiment_dict['OT2 Right Tipracks']
     right_tiprack_slots = experiment_dict['OT2 Right Tiprack Slots']
     right_tipracks = object_to_object_list(protocol, right_tiprack_names, right_tiprack_slots)
-    
+    right_tiprack_wells = object_list_to_well_list(right_tipracks)
+
     right_pipette = protocol.load_instrument(experiment_dict['OT2 Right Pipette'], 'right', tip_racks = right_tipracks)
     right_pipette.flow_rate.aspirate = experiment_dict['OT2 Right Pipette Aspiration Rate (uL/sec)']
     right_pipette.flow_rate.dispense = experiment_dict['OT2 Right Pipette Dispense Rate (uL/sec)']    
-    right_pipette.well_bottom_clearance.dispense = experiment_dict['OT2 Bottom Dispensing Clearance (mm)'] 
-    
+    right_pipette.well_bottom_clearance.dispense = experiment_dict['OT2 Bottom Dispensing Clearance (mm)']
+
     left_tiprack_names = experiment_dict['OT2 Left Tipracks']
     left_tiprack_slots = experiment_dict['OT2 Left Tiprack Slots']
     left_tipracks = object_to_object_list(protocol, left_tiprack_names, left_tiprack_slots)
+    left_tiprack_wells = object_list_to_well_list(left_tipracks)
+
     
     left_pipette = protocol.load_instrument(experiment_dict['OT2 Left Pipette'], 'left', tip_racks = left_tipracks) # is there a way to ensure the correct tiprack is laoded? maybe simple simualtion test a function
     left_pipette.flow_rate.aspirate = experiment_dict['OT2 Left Pipette Aspiration Rate (uL/sec)']
@@ -176,7 +211,10 @@ def loading_labware(protocol, experiment_dict):
     loaded_labware_dict = {'Destination Wells': dest_wells, 
                            'Stock Wells': stock_wells,
                            'Left Pipette': left_pipette,
-                           'Right Pipette': right_pipette}
+                           'Left Tiprack Wells': left_tiprack_wells,
+                           'Right Pipette': right_pipette,
+                           'Right Tiprack Wells': right_tiprack_wells
+                           }
     
     return loaded_labware_dict # even if there was a way to call from protocol object would need to rename all over aagin
 
@@ -223,7 +261,7 @@ def pipette_volumes_component_wise(protocol, loaded_dict, stock_volumes_df, stoc
             elif large_pipette.min_volume <= initial_volume <= large_pipette.max_volume:
                 pipette = large_pipette        
                 
-            pipette.pick_up_tip()
+            pipette.pick_up_tip() # verify whether this is running on 2.1 vs 2.2 logic 
             
             # here is where you do conditionals like if all within this range then just use distribbute
             if check_for_distribute(volumes_to_pipette, pipette.min_volume, pipette.max_volume) == True: # the issue with this it might be very wasteful and require more stock since buffers, we already delt with ranges so we should be good on that
@@ -258,11 +296,32 @@ def pipette_volumes_component_wise(protocol, loaded_dict, stock_volumes_df, stoc
         print(line)     
     return info_list[0]
 
-
-def pipette_volumes_sample_wise(protocol, volumes_df, loaded_dict):
-    """A pipetting strategy which results in samples being made one by one rather than a component being added completely to all samples first.
-    The component is added single and has its pipette parked back to use for the other samples."""
-
+def pipette_volumes_sample_wise(protocol, volume_df, stock_position_info, loaded_dict):    
+    small_pipette = loaded_dict['Small Pipette']
+    small_tiprack = loaded_dict['Small Tiprack']
+    large_pipette = loaded_dict['Large Pipette']
+    large_tiprack = loaded_dict['Large Tiprack']
+    destination_wells = loaded_dict['Destination Wells']
+    stock_wells = loaded_dict['Stock Wells'] # might not be needed
+    info = []
+    for i, row in volume_df.iterrows():
+        single_sample_stock_volumes = row
+        well_index = i
+        destination_well = destination_wells[well_index]
+        info.append(destination_well)
+        for stock_index, column_name in enumerate(volume_df.columns): 
+            stock_name = column_name
+            stock_volume_to_pull = single_sample_stock_volumes[stock_name]
+            stock_position = find_stock_to_pull(stock_name, well_index, stock_position_info)
+            
+            pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, small_tiprack, large_pipette, large_tiprack)
+            pipette.pick_up_tip(tiprack_wells[stock_index])
+            pipette.transfer(stock_volume_to_pull, stock_position, destination_well, new_tip='never')
+            pipette.return_tip()
+    
+    for line in protocol.commands(): # Remember that this command prints all of the previous stuff with it so if in a loop will print the whole history
+        print(line)  
+    return info
 
 
 def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, number_of_samples):
@@ -316,7 +375,35 @@ def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, n
         print(line)
     return sample_final_location
 
+def create_sample_making_directions(volume_df, stock_position_info, loaded_dict):    
+    destination_wells = loaded_dict['Destination Wells']
+    stock_wells = loaded_dict['Stock Wells'] # might not be needed
+    
+    sample_making_dict = {}
+    for i, row in volume_df.iterrows():
+        single_sample_stock_volumes = row
+        well_index = i # same as sample index
+        destination_well = destination_wells[well_index]
+        sample_making_dict[i] = {}
+        single_sample_dict = sample_making_dict[i]
+        
+        for stock_index, column_name in enumerate(volume_df.columns): 
+            stock_name = column_name
+            single_sample_dict[stock_name] = {}
+            single_stock_direction_entry = single_sample_dict[stock_name]
+            stock_volume_to_pull = single_sample_stock_volumes[stock_name]
+            stock_position = find_stock_to_pull(stock_name, well_index, stock_position_info)
+
+            single_stock_direction_entry['Stock Position'] = stock_position
+            single_stock_direction_entry['Destination Well Position'] = destination_well
+            single_stock_direction_entry['Stock Volume'] = stock_volume_to_pull
+
+    return sample_making_dict
+
 ###################################### Require Further Testing ###################################################################################
+
+
+
 
 def range_gap(small_pipette, pipette_2):
     if p1_max >= p2_min:
