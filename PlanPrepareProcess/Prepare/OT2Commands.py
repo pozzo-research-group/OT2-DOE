@@ -97,14 +97,18 @@ def stock_well_ranges(loaded_dict, volume_df, limit):
  
     return stock_info_to_pull
 
-def determine_pipette_tiprack(volume, small_pipette, small_tiprack, large_pipette, large_tiprack): 
+def determine_pipette_tiprack(volume, small_pipette, large_pipette, small_tiprack=None, large_tiprack=None): 
     if small_pipette.min_volume <= volume <= small_pipette.max_volume or volume == 0:
         pipette = small_pipette
-        tiprack = small_tiprack
+        if small_tiprack:
+            tiprack = small_tiprack
+            return pipette, tiprack
     elif large_pipette.min_volume <= volume <= large_pipette.max_volume:
         pipette = large_pipette   
-        tiprack = large_tiprack
-    return pipette, tiprack
+        if large_tiprack:   
+            tiprack = large_tiprack
+            return pipette, tiprack
+    return pipette
 
 def determine_pipette_resolution(loaded_dict):
     """Given the opentrons only uses two pipettes one as always designated as a small or large pipette to ensure a wide range 
@@ -215,11 +219,13 @@ def loading_labware(protocol, experiment_dict):
                            'Right Pipette': right_pipette,
                            'Right Tiprack Wells': right_tiprack_wells
                            }
+
+    loaded_labware_dict = determine_pipette_resolution(loaded_labware_dict)
     
     return loaded_labware_dict # even if there was a way to call from protocol object would need to rename all over aagin
 
 
-def pipette_volumes_component_wise(protocol, loaded_dict, stock_volumes_df, stock_ranges):
+def pipette_volumes_component_wise_broken(protocol, loaded_dict, stock_volumes_df, stock_ranges):
     """ Given the protocol used to set up the loaded labware dict, along with the volumes to pipette will send transfer commands to the ot2.
     The volumes fed as a 2D list where each sublist is the the volumes for one stock. Ranges are fed similar """
     
@@ -296,32 +302,59 @@ def pipette_volumes_component_wise(protocol, loaded_dict, stock_volumes_df, stoc
         print(line)     
     return info_list[0]
 
-def pipette_volumes_sample_wise(protocol, volume_df, stock_position_info, loaded_dict):    
+def pipette_volumes_sample_wise(protocol, directions, loaded_dict):    
     small_pipette = loaded_dict['Small Pipette']
     small_tiprack = loaded_dict['Small Tiprack']
     large_pipette = loaded_dict['Large Pipette']
     large_tiprack = loaded_dict['Large Tiprack']
-    destination_wells = loaded_dict['Destination Wells']
-    stock_wells = loaded_dict['Stock Wells'] # might not be needed
-    info = []
-    for i, row in volume_df.iterrows():
-        single_sample_stock_volumes = row
-        well_index = i
-        destination_well = destination_wells[well_index]
-        info.append(destination_well)
-        for stock_index, column_name in enumerate(volume_df.columns): 
-            stock_name = column_name
-            stock_volume_to_pull = single_sample_stock_volumes[stock_name]
-            stock_position = find_stock_to_pull(stock_name, well_index, stock_position_info)
-            
-            pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, small_tiprack, large_pipette, large_tiprack)
-            pipette.pick_up_tip(tiprack_wells[stock_index])
-            pipette.transfer(stock_volume_to_pull, stock_position, destination_well, new_tip='never')
-            pipette.return_tip()
     
-    for line in protocol.commands(): # Remember that this command prints all of the previous stuff with it so if in a loop will print the whole history
+    for sample_index, stock_instruction in directions.items():
+        for stock_index, (stock_name, single_stock_instructions) in enumerate(stock_instruction.items()):
+            stock_volume_to_pull = single_stock_instructions['Stock Volume']
+            stock_position_to_pull = single_stock_instructions['Stock Position']
+            destination_well = single_stock_instructions['Destination Well Position']
+
+            # Now the three pieces of info available volume, destination, source.
+            
+            pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack)
+            pipette.pick_up_tip(tiprack_wells[stock_index])
+            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never')
+            pipette.return_tip()
+
+    for line in protocol.commands(): 
         print(line)  
-    return info
+
+def pipette_volumes_component_wise_fixing(protocol, directions, loaded_dict, stock_to_pipette_order ):    
+    small_pipette = loaded_dict['Small Pipette']
+    small_tiprack = loaded_dict['Small Tiprack']
+    large_pipette = loaded_dict['Large Pipette']
+    large_tiprack = loaded_dict['Large Tiprack']
+    
+    
+    # stock_positions_sublists = []
+    # stock_volumes_sublists = []
+    # destination_well_position_sublists = []
+    for stock_name in stock_to_pipette_order:
+    #     single_stock_volumes = [] # only need to save this if checking for distribute
+    #     single_stock_positions = []
+    #     dest_well_positions = []
+
+        pipette.pick_up_tip()
+        for stock_index, stock_instructions in directions.items():
+            single_stock_instructions = stock_instructions[stock_name]
+            stock_volume_to_pull = single_stock_instructions['Stock Volume']
+            stock_position_to_pull = single_stock_instructions['Stock Position']
+            destination_well = single_stock_instructions['Destination Well Position']
+    #         single_stock_volumes.append(stock_volume_to_pull)
+    #         single_stock_positions.append(stock_position_to_pull)
+    #         dest_well_positions.append(destination_well)
+            pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack) # this is hard becasue you still need to have the switching cases 
+
+            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never')
+            pipette.return_tip()
+
+    for line in protocol.commands(): 
+        print(line)  
 
 
 def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, number_of_samples):
@@ -333,38 +366,27 @@ def transfer_from_destination_to_final(protocol, loaded_dict, experiment_dict, n
     
     dest_wells = loaded_dict['Destination Wells']
     stock_wells = loaded_dict['Stock Wells']
-    left_pipette = loaded_dict['Left Pipette']
-    right_pipette = loaded_dict['Right Pipette']
-
-    left_pipette.flow_rate.dispense = experiment_dict['OT2 Single Transfer Left Pipette Dispense Rate (uL/sec)']
-    right_pipette.flow_rate.dispense = experiment_dict['OT2 Single Transfer Right Pipette Dispense Rate (uL/sec)']
-
-    # Remember we initialize pipettes as large and small is because we want to have the highest precision possible!
-    if left_pipette.max_volume < right_pipette.max_volume:
-        small_pipette = left_pipette 
-        large_pipette = right_pipette 
-    
-    if left_pipette.max_volume > right_pipette.max_volume:
-        small_pipette = right_pipette
-        large_pipette = left_pipette
+    small_pipette = loaded_dict['Small Pipette']
+    large_pipette = loaded_dict['Large Pipette']
+ 
 
     # Loading the final transfer labware
 
     final_transfer_plate_names = experiment_dict['OT2 Single Transfer From Dest Labwares']
     final_transfer_plate_slots = experiment_dict['OT2 Single Transfer From Dest Slots']
-    final_transfer_wells = object_to_well_list(protocol, final_transfer_plate_names, final_transfer_plate_slots) 
-
+    
+    final_transfer_plates_objects = object_to_object_list(protocol, final_transfer_plate_names , final_transfer_plate_slots)
+    final_transfer_wells = object_list_to_well_list(final_transfer_plates_objects) 
     transfer_volume = float(experiment_dict['OT2 Single Transfer From Dest Volume (uL)'])
-    bottom_dispensing_clearence = experiment_dict['OT2 Single Transfer From Dest Bottom Dispensing Clearance (mm)']
 
     assert len(final_transfer_wells) >= number_of_samples, 'The number of samples is exceeds the number of final destination wells'
 
-    # make this bit into a function since commonly called 
-    if small_pipette.min_volume <= transfer_volume <= small_pipette.max_volume or initial_volume == 0:
-        pipette = small_pipette
-    elif large_pipette.min_volume <= transfer_volume <= large_pipette.max_volume:
-        pipette = large_pipette  
+    pipette = determine_pipette_tiprack(transfer_volume, small_pipette, large_pipette)
         
+    pipette.flow_rate.aspirate = experiment_dict['OT2 Single Transfer Pipette Aspiration Rate (uL/sec)']
+    pipette.flow_rate.dispense = experiment_dict['OT2 Single Transfer Pipette Dispense Rate (uL/sec)']
+    pipette.well_bottom_clearance.dispense = experiment_dict['OT2 Single Transfer From Dest Bottom Dispensing Clearance (mm)']
+    pipette.well_bottom_clearance.aspirate = experiment_dict['OT2 Single Transfer From Dest Bottom Aspirating Clearance (mm)']
 
     sample_final_location = []
     
