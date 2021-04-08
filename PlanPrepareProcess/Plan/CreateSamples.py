@@ -17,7 +17,7 @@ import csv
     - Volumes are defaulted to microliters (default unit of opentrons)
     """
 
-def get_experiment_plan(filepath):
+def get_experiment_plan(filepath, chemical_database_path):
     """
     Parse a .csv file to create a dictionary of instructions.
     """
@@ -27,7 +27,16 @@ def get_experiment_plan(filepath):
         for i, row in enumerate(reader):
             assert len(row) == 2
             plan_dict[row[0]] = ast.literal_eval(row[1])
+    
+    with open(filepath, newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        plan_dict = {}
+        for i, row in enumerate(reader):
+            assert len(row) == 2
+            plan_dict[row[0]] = ast.literal_eval(row[1])
 
+    plan_dict['Chemical Database'] = chemical_database_path
+    
     return plan_dict
 
 def check_for_volume_unit(name):
@@ -96,7 +105,7 @@ def combine_df_hamburger(df1,df2):
     return df3
 
 # also naming notation should more be "uniform" versus "lattice"
-def generate_candidate_lattice_concentrations(experiment_csv_dict, unity_filter = False, expose_unfiltered_df = False):
+def generate_candidate_lattice_concentrations(experiment_csv_dict, unity_filter = False, expose_unfiltered_df = False): # need to have something check for the units 
     """Given the complete csv dictionary of instruction, uses the n component linspaces of equivalent concentration units which summmation equal one (i.e. volf or wtf). 
     The number of linspaces used are to equal the total number of components - 1. Once a 2D list of component concentration candidates are generated the canidates (of length total # of components - 1) are subsequently filtered/completed by sample_sum_filter. 
     All entry additions follow the order of linspaces from the experiment_csv_dict."""
@@ -109,7 +118,6 @@ def generate_candidate_lattice_concentrations(experiment_csv_dict, unity_filter 
     # Checks
     assert len(component_units) == len(component_names), 'Number of component names not equal to number of provided units'
     assert all_same(component_units), 'Unit of components are not identical, currently all units must be identical.'    
-    
 
     conc_range_list = [] # will hold flattened linspaces (component spacing) of possible concentration for each component given the spacing method 
     for conc_linspace in component_conc_linspaces:
@@ -229,6 +237,17 @@ def prepare_stock_search(stock_canidates, experiment_csv_dict, wtf_sample_canida
   
     return prepare_stock_dict
 
+def find_density(component_name, chemical_database):
+    component_info = chemical_database[chemical_database['Component Abbreviation']==component_name]
+    density = component_info['Density (g/L)'].values[0]
+    return density
+
+
+def find_mw(component_name, chemical_database):
+    component_info = chemical_database[chemical_database['Component Abbreviation']==component_name]
+    mw = component_info['Molecular Weight (g/mol)'].values[0]
+    return mw
+
 def calculate_ouzo_volumes_from_wtf(sample_conc_df, experiment_csv_dict, stock_searching = False, stock_searching_concentration = None):
     """ This specfic volume function uses the stock concentration and sample concentration to calculate volumes for each stock to create a sample.
     For this case of Ouzo calculations, it is assumed the 2nd to last entry (in all things name, unit, concentration value) is the common solvent for all things prior to the second to last entry,
@@ -242,8 +261,11 @@ def calculate_ouzo_volumes_from_wtf(sample_conc_df, experiment_csv_dict, stock_s
     # component information, [component1, component2, component3...]
     component_names = experiment_csv_dict['Component Shorthand Names']
     component_units = experiment_csv_dict['Component Concentration Unit'] # never used? 
-    component_densities = experiment_csv_dict['Component Density (g/mL)']
-    component_mws = experiment_csv_dict['Component MW (g/mol)']
+    chemical_database = experiment_csv_dict['Chemical Database'] 
+    
+    component_densities = [find_density(component, chemical_database) for component in component_names]
+    component_mws = [find_mw(component, chemical_database) for component in component_names]
+    print(component_densities, component_mws)
     
     stock_names = experiment_csv_dict['Stock Names']
     stock_concentrations_units = experiment_csv_dict['Stock Concentration Units']
