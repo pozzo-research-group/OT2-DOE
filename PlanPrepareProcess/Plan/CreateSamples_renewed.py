@@ -126,12 +126,12 @@ def unity_filter_df(concentration_df, component_names, component_units):
     assert not concentration_df.empty, 'No suitable samples were found, please change your concentration space. Most likely this means you have your linspaces set too close together at all high concentrations (close to 1) resulting in impossible samples (wtf/volf>1). Turn on expose_df to return unfiltered dataframe'
     return concentration_df
 
-mass_dictionary = {g:1} # should build a dictionary of units people can add to such that not restricted to hardcoded ones
+mass_dictionary = {'g':1} # should build a dictionary of units people can add to such that not restricted to hardcoded ones
 
 def determine_unit_pathway(plan, concentration_df):
     components_concentration_units = plan['Component Concentration Units']
 
-    for cib
+    pass
 
 
 
