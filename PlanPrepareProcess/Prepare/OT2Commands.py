@@ -7,15 +7,12 @@ def custom_labware_dict(labware_dir_path):
     """Given the path of a folder of custom labware .json files will create dict
     of key = name and value = labware definition to be loaded using protocol.load_labware_from_definition 
     versus typical protocol.load_labware"""
-    original_working_dir = os.getcwd()
-    os.chdir(labware_dir_path) 
     labware_dict = {}
-    for file in glob.glob("*.json"):
+    for file in glob.glob(labware_dir_path + '/**/*.json', recursive=True):
         with open(file) as labware_file:
             labware_name = os.path.splitext(file)[0] # removes the .json extnesion
             labware_def = json.load(labware_file)
             labware_dict[labware_name] = labware_def
-    os.chdir(original_working_dir)
     return labware_dict 
 
 def object_to_object_list(protocol, stock_object_names, stock_object_slots):

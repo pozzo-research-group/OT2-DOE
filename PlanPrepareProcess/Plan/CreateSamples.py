@@ -1,4 +1,3 @@
-# All of these run fine on OT2 - avoid matplotlib or scipy
 import numpy as np
 import pandas as pd
 from opentrons import simulate, execute, protocol_api
@@ -9,13 +8,6 @@ import datetime
 from pytz import timezone
 import csv
 
-"""Common terms/info: 
-    2D list or nested list = [[a,b,c], [e,f,g]]
-    
-    Unless otherwise stated:
-    - The order of list or array should be assumed to match that of its naming list or arrays. For example if stock_concentrations = [0.1, 0.5, 1] with stock_names = [A, B, C], stock_unit = ['wtf', 'wtf', 'wtf'] then stock A = 1 wtf, B = 0.5 wtf and so on.
-    - Volumes are defaulted to microliters (default unit of opentrons)
-    """
 
 def get_experiment_plan(filepath, chemical_database_path):
     """
@@ -239,7 +231,7 @@ def prepare_stock_search(stock_canidates, experiment_csv_dict, wtf_sample_canida
 
 def find_density(component_name, chemical_database):
     component_info = chemical_database[chemical_database['Component Abbreviation']==component_name]
-    density = component_info['Density (g/L)'].values[0]
+    density = component_info['Density (g/mL)'].values[0]
     return density
 
 

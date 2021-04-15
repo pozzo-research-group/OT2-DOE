@@ -1,8 +1,8 @@
 Component Abbreviation,Component Full Name,Molecular Weight (g/mol),Density (g/L),Source
-dppc,"1,2-dipalmitoyl-sn-glycero-3-phosphocholine",734.039,0,https://avantilipids.com/product/850355
-dspepeg2000,"1,2-distearoyl-sn-glycero-3-phosphoethanolamine-N-[amino(polyethylene glycol)-2000]",2790.521,0,https://avantilipids.com/product/880128
+dppc,"1,2-dipalmitoyl-sn-glycero-3-phosphocholine",734.039,nan,https://avantilipids.com/product/850355
+dspepeg2000,"1,2-distearoyl-sn-glycero-3-phosphoethanolamine-N-[amino(polyethylene glycol)-2000]",2790.521,nan,https://avantilipids.com/product/880128
 pfh,Perfluorohexane,338.041845,1691,https://www.sigmaaldrich.com/catalog/product/aldrich/281042?lang=en&region=US
 ethanol,Ethanol,46.069,789.3,https://www.sigmaaldrich.com/catalog/search?interface=All&term=ethanol&N=0&focus=product&lang=en&region=US
 water,Water,18.01528,1000,
-cadmiumoleate,Cadmium Oleate,675.3,0,
-topselenide,Triphenylphosphine selenide,341.3,0,
+cadmiumoleate,Cadmium Oleate,675.3,nan,
+topselenide,Triphenylphosphine selenide,341.3,nan,
