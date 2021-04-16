@@ -19,13 +19,10 @@ def get_experiment_plan(filepath, chemical_database_path):
             assert len(row) == 2
             plan_dict[row[0]] = ast.literal_eval(row[1])
     
-    input_file = csv.DictReader(open(chemical_database_path))
-    chem_database_dict = {}
-    for i, row in enumerate(input_file):
-        component_name = row['Component Abbreviation']
-        chem_database_dict[component_name] = row
-
-    plan_dict['Chemical Database'] = chem_database_dict
+    chem_data = pd.read_csv(chemical_database_path)
+    chem_data_names = chem_data['Component Abbreviation']
+    chem_data.index = chem_data_names
+    plan_dict['Chemical Database'] = chem_data.T.to_dict()
     
     return plan_dict
 
