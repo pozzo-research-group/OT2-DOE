@@ -225,6 +225,163 @@ def nan_amounts(amounts_df):
     return amounts_df_zeroed
 
 
+def isolate_common_column(df, common_string):
+    """Returns dataframe with only the columns which contain the common string provided. 
+    This is useful when calling for only a certain group of common information such as stocks or component masses"""
+    cols = df.columns
+    common_string_cols = [col for col in cols if common_string in col]
+    final_df = df.copy()[common_string_cols]
+    return final_df
+
+def find_best_df_match(df, string):
+    """Returns the dataframe with only the columns which contain the string provided. 
+    It is identical to isolate_common_column(), so need to consolidate and phase one out."""
+    match = df[[col for col in df if string in col]]
+    return match
+
+def stock_dictionary(stock_names, stock_units, stock_values, stock_densities = None):
+    """The stock name is required to be in the form 'solute n-solvent-stock' where the entry prior to the keyword stock are solvent
+    and anything prior to that is assumed a solute. Will return a dictionary of the solvent and solute while pulling information from """
+    if stock_densities == None:
+        stock_densities = len(stock_names)*[float('nan')]
+    
+    stock_dict = {}
+    for i, stock_name in enumerate(stock_names):
+        stock_unit = stock_units[i]
+        stock_value = stock_values[i]
+        stock_density = stock_densities[i]
+        stock_components = stock_name.split('-')
+        stock_solutes = stock_components[:-2] # will always be a list
+        stock_solvent = stock_components[-2]
+        stock_dict[stock_name] = {'solutes': stock_solutes, 'solvents':stock_solvent, 'unit': stock_unit, 'value': stock_value, 'Density (g/mL)': stock_density}
+        
+    return stock_dict
+
+
+def find_best_header_match(df, string):
+    """Returns the dataframe column name which contains the provided string. Very unspecific so 
+    be very careful with use."""
+    
+    match = [col for col in df if string in col][0]
+    return match
+
+def identify_common_solvents(stock_dict):
+    solvents = [stock_info['solvents'] for stock_name, stock_info in stock_dict.items()]
+    common_solvents = list(set([x for x in solvents if solvents.count(x) > 1]))
+    for common_solvent in common_solvents: 
+        for stock_name, stock_info in stock_dict.items():
+            stock_solutes = stock_info['solutes']
+            stock_solvents = stock_info['solvents']
+            if len(stock_solutes) == 0 and common_solvent== stock_solvents:
+                stock_dict[stock_name]['Common Solvent'] = 'Pure'
+#                 stock_dict[stock_name]['Solvent Volumes'] = find_best_header_match(df, stock_solutes + ' cumn')
+            elif len(stock_solutes) > 0 and common_solvent == stock_solvents:
+                stock_dict[stock_name]['Common Solvent'] = 'Mixture'
+            elif stock_dict[stock_name].get('Common Solvent'): # prevents from Pure and Mixtures being overwriteen by None
+                pass
+            else:     
+                stock_dict[stock_name]['Common Solvent'] = 'None'
+    return stock_dict
+
+def calculate_stock_volumes_mass_units(component_mass, component_unit, stock_concentration, stock_unit, stock_density = None, component_mw = None):
+    if component_unit == 'g' and stock_unit == 'wtf': # we need to specify g as it is the only thing working
+        stock_mass = component_mass/stock_concentration # in g
+        stock_volume = stock_mass/stock_density
+    elif component_unit == 'g' and stock_unit == 'molarity':
+         stock_volume = 1000*component_mass/(stock_concentration*component_mw) # in mL
+    elif component_unit == 'g' and stock_unit == 'mgpermL':
+         stock_volume = component_mass/(stock_concentration/1000)
+    else:
+        raise AssertionError("Units provided are not currently supported")
+    return stock_volume
+
+
+def calculate_stock_volumes_vol_units(component_volume, component_unit, stock_concentration, stock_unit, stock_density = None, stock_mw = None):
+    
+    # mL could really be anything
+    if component_unit == 'mL' and stock_unit == 'volf': # we need to specify g as it is the only thing working
+        stock_volume = component_volume/stock_concentration
+    return stock_volume
+
+
+def stock_dict_from_plan(plan):
+    stock_names = plan['Stock Names']
+    stock_units = plan['Stock Concentration Units']
+    stock_concentrations = plan['Stock Concentrations']
+    stock_densities = plan['Stock Density (g/mL) (only for wtf)']
+    stock_dict = stock_dictionary(stock_names, stock_units, stock_concentrations, stock_densities)
+
+    return stock_dict
+
+def calculate_stock_volumes_from_component_masses(plan, complete_component_df, stock_dict):
+    stock_names = plan['Stock Names']
+    stock_units = plan['Stock Concentration Units']
+    stock_concentrations = plan['Stock Concentrations']
+    component_dict = plan['Chemical Database']
+    
+    masses = isolate_common_column(complete_component_df, 'mass')
+    volumes = isolate_common_column(complete_component_df, 'volume')
+    assert len(masses.columns) == len(stock_names)
+    for i, col in enumerate(masses): # iterating to match stock to component
+        stock_name = stock_names[i] # the biggest issue is there no way to call and match stock and componetns
+        stock_info = stock_dict[stock_name]
+        stock_unit = stock_info['unit']
+        stock_concentration = stock_info['value']
+        common_solvent = stock_info['Common Solvent']
+        stock_density = stock_info['Density (g/mL)']
+
+        component_mass = masses[col]
+        component_name = identify_component_name(col)
+        component_unit = identify_unit(col)
+        component_mw = component_dict[component_name]['Molecular Weight (g/mol)']
+
+        stock_volumes = calculate_stock_volumes_mass_units(component_mass, component_unit, stock_concentration, stock_unit, stock_density, component_mw)
+
+        complete_component_df[stock_name + ' amount volume mL'] = stock_volumes
+    return complete_component_df
+
+def calculate_common_solvent_residual_volumes(complete_df, stock_dict):
+    complete_df = complete_df.copy() # why is this necessary
+    stock_volumes = isolate_common_column(complete_df, 'stock')
+    
+    stock_names = [identify_component_name(col) for col in stock_volumes if 'stock' in col] # this is seperate from the dict since your dict can have more stocks just need ot have the same name
+    
+    pure_common_solvent_stocks = [stock_name for stock_name in stock_names if stock_dict[stock_name]['Common Solvent'] == 'Pure']
+    mixture_common_solvent_stocks = [stock_name for stock_name in stock_names if stock_dict[stock_name]['Common Solvent'] == 'Mixture']
+
+    for pure_common_solvent in pure_common_solvent_stocks:
+        for stock_name in mixture_common_solvent_stocks:
+            stock_info = stock_dict[stock_name]
+            solutes = stock_info['solutes']
+            if pure_common_solvent in stock_name:
+                stock_volumes_to_subtract = find_best_df_match(complete_df, stock_name + ' amount volume') 
+                component_volumes = find_best_df_match(complete_df, solutes[0] + ' amount volume') 
+                stock_volumes_to_subtracted_solvent = stock_volumes_to_subtract-component_volumes.values
+                # need to somehow get rid of the mL dependence, the easiest way is to make the stock_info prior hold its volume headers as to call easier
+                common_stock_volume_to_track_name = [pure_common_solvent + ' amount volume mL']
+                common_stock_volume_to_track = complete_df[common_stock_volume_to_track_name] 
+                common_stock_volume_removed_stocks = common_stock_volume_to_track - stock_volumes_to_subtracted_solvent.values
+                complete_df[common_stock_volume_to_track_name] = common_stock_volume_removed_stocks
+    
+    return complete_df 
+
+def calculate_total_stock_volumes(complete_df):
+    stock_volumes = isolate_common_column(complete_df, 'stock')
+    complete_df['Total Volume mL'] = stock_volumes.sum(axis=1)
+    return complete_df
+
+
+
+
+
+
+
+
+
+
+
+
+
 ##################### In progress ##############################
 
 def concentration_from_linspace_all_info(plan, unity_filter = False): # if you go this route you can do whole dataframe operation you just need to verify all component units of the same type
