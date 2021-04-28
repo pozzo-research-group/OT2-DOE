@@ -243,6 +243,8 @@ def identify_common_solvents(stock_dict):
                 pass
             else:     
                 stock_dict[stock_name]['Common Solvent'] = 'None'
+
+            
     return stock_dict
 
 
