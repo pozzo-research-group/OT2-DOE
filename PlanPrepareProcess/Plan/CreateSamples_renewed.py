@@ -248,34 +248,6 @@ def identify_common_solvents(stock_dict):
     return stock_dict
 
 
-def calculate_stock_volumes_from_component_masses(plan, complete_component_df, stock_dict):
-    """Used to calculate stock volume from component volumes. This pathway is only appropiate when dealing with component masses and stock units of wtf, molarity, and mgpermL.
-    This is still under the assumption of one component + one solvent = one stock and that the complete_component_df headers will be in the form componentname_rest of column.
-    """
-
-    component_dict = plan['Chemical Database']
-    component_masses = isolate_common_column(complete_component_df, 'mass')
-    for stock_name, stock_info in stock_dict.items():
-        stock_unit = stock_info['unit']
-        stock_concentration = stock_info['concentration']
-        stock_density = stock_info['Density (g/mL)']
-        
-        if len(stock_info['solutes']) != 0:
-            component_name = stock_info['solutes'][0]
-        else:
-            component_name = stock_info['solvents']
-        
-        component_mass_column = find_component_column(component_name, component_masses)
-        component_unit = identify_unit(component_mass_column[0])
-        component_mass = component_masses[component_mass_column]
-        component_mw = component_dict[component_name]['Molecular Weight (g/mol)']
-        
-        stock_volumes = calculate_stock_volumes_mass_units(component_mass, component_unit, stock_concentration, stock_unit, stock_density, component_mw)
-        complete_component_df[stock_name + ' amount volume mL'] = stock_volumes
-    return complete_component_df
-
-
-
 def calculate_stock_volumes_mass_units(component_mass, component_unit, stock_concentration, stock_unit, stock_density = None, component_mw = None):
     """ Based on the most base information of: 
     - Component mass and unit
@@ -304,7 +276,64 @@ def calculate_stock_volumes_vol_units(component_volume, component_unit, stock_co
         raise AssertionError("Units provided are not currently supported for component volume to stock volume calculations")
     return stock_volume
 
-#### If common solvents are present then use these functions to account for them. 
+def calculate_stock_volumes_from_component_masses(plan, complete_component_df, stock_dict):
+    """Used to calculate stock volume from component volumes. This pathway is only appropiate when dealing with component masses and stock units of wtf, molarity, and mgpermL.
+    This is still under the assumption of one component + one solvent = one stock and that the complete_component_df headers will be in the form componentname_rest of column.
+    """
+
+    component_dict = plan['Chemical Database']
+    component_masses = isolate_common_column(complete_component_df, 'mass')
+    for stock_name, stock_info in stock_dict.items():
+        stock_unit = stock_info['unit']
+        stock_concentration = stock_info['concentration']
+        stock_density = stock_info['Density (g/mL)']
+        
+        if len(stock_info['solutes']) != 0:
+            component_name = stock_info['solutes'][0]
+        else:
+            component_name = stock_info['solvents']
+        
+        component_mass_column = find_component_column(component_name, component_masses)
+        component_unit = identify_unit(component_mass_column[0])
+        component_mass = component_masses[component_mass_column]
+        component_mw = component_dict[component_name]['Molecular Weight (g/mol)']
+        
+        stock_volumes = calculate_stock_volumes_mass_units(component_mass, component_unit, stock_concentration, stock_unit, stock_density, component_mw)
+        complete_component_df[stock_name + ' amount volume mL'] = stock_volumes
+    return complete_component_df
+
+
+#### If common solvents are present then use these functions to account for them. Each has its specific use case so understand the information you need
+
+def missing_volume(total_sample_volume, complete_df):
+    """Simple calculation to compute for a missing volume. Reccomended you use complete_missing_volume_with_commmon_solvent() function."""
+    stock_df = isolate_common_column(complete_df, 'stock')
+    total_stock_volume = stock_df.sum(axis=1)
+    missing_volume = total_sample_volume-total_stock_volume
+    complete_df['Missing Sample Volume mL'] = missing_volume
+    return complete_df
+
+def complete_missing_volume_with_commmon_solvent(complete_volume, complete_df, stock_dict, solvent=None):
+    """Aimed to caclulate for missing solvent volumes (based on the complete volume argument) when working with typically mgpermL or molarity component based DOE.
+    Will first look if a single common solvent is present by referencing the stock dictionary made previous, if there is none
+    or more than two common solvents then it is required to manually enter it as an argument."""
+    complete_df = complete_df.copy()
+    stock_volumes = isolate_common_column(complete_df, 'stock')
+    stock_names = [identify_component_name(col) for col in stock_volumes if 'stock' in col] # this is seperate from the dict since your dict can have more stocks just need ot have the same name
+    pure_common_solvent_stocks = [stock_name for stock_name in stock_names if stock_dict[stock_name]['Common Solvent'] == 'Pure']
+    mixture_common_solvent_stocks = [stock_name for stock_name in stock_names if stock_dict[stock_name]['Common Solvent'] == 'Mixture']
+
+    assert not len(pure_common_solvent_stocks) > 1, 'Too many common solvents, select one by specifying solvent arugment'
+    if solvent:
+        solvent = solvent
+    elif len(pure_common_solvent_stocks) == 1:
+        solvent = next(iter(pure_common_solvent_stocks))
+    else:
+        raise AssertionError('Solvent has not been selected, either specify one or ensure common solvent already presnent in stock dictionary')
+    
+    missing_solvent_volume = complete_volume-stock_volumes.sum(axis=1)
+    complete_df[solvent + '-stock volume mL'] = missing_solvent_volume
+    return complete_df
 
 def calculate_common_solvent_residual_volumes(complete_df, stock_dict):
     """ By looking at common solvent arguments previously established in the stock_dict, will take into account stock volumes which contain a common solvent and if the commmon solvent is 
@@ -408,7 +437,13 @@ def calculate_total_stock_volumes(complete_df):
     complete_df['Total Volume mL'] = stock_volumes.sum(axis=1)
     return complete_df
 
-
+def convert_mL_to_uL(volumes_df): # switch this to be the dictionary using https://stackoverflow.com/questions/45468630/change-column-names-in-pandas-dataframe-from-a-list
+    columns_mL = [col for col in volumes_df if 'mL' in col]
+    columns_uL = [col_mL.replace('mL', 'uL') for col_mL in columns_mL]
+    volumes_df = volumes_df[columns_mL]
+    volumes_uL = volumes_df*1000
+    volumes_uL.columns = columns_uL
+    return volumes_uL
 
 
 ##################### In progress ##############################
