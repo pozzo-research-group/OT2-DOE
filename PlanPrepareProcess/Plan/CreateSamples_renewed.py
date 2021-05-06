@@ -272,11 +272,56 @@ def calculate_stock_volumes_vol_units(component_volume, component_unit, stock_co
     # mL could really be anything
     if component_unit == 'mL' and stock_unit == 'volf': # we need to specify g as it is the only thing working
         stock_volume = component_volume/stock_concentration
+
     else: 
         raise AssertionError("Units provided are not currently supported for component volume to stock volume calculations")
     return stock_volume
 
-def calculate_stock_volumes_from_component_masses(plan, complete_component_df, stock_dict):
+
+def calculate_stock_volumes_from_component_concs(plan, complete_component_df, stock_dict): # this is working to be more automatic
+
+    component_dict = plan['Chemical Database']
+
+
+    component_concentrations = isolate_common_column(complete_component_df, 'concentration')
+    component_masses = isolate_common_column(complete_component_df, 'mass')
+    component_volumes = isolate_common_column(complete_component_df, 'volume')
+    for stock_name, stock_info in stock_dict.items():
+        stock_unit = stock_info['unit']
+        stock_concentration = stock_info['concentration']
+        stock_density = stock_info['Density (g/mL)']
+        
+        if len(stock_info['solutes']) != 0:
+            component_name = stock_info['solutes'][0]
+        else:
+            component_name = stock_info['solvents']
+        
+        
+        concentration_column = find_component_column(component_name, component_concentrations)
+        component_conc_unit = identify_unit(concentration_column[0])
+#         component_concs = component_concentrations[concentration_column]
+        # ok using the concentraiton you determined the path to take and which information to pull
+        
+        if component_conc_unit in ('wtf', 'molarity', 'mgpermL') and stock_unit in ('wtf', 'molarity', 'mgpermL'):
+            component_mass_column = find_component_column(component_name, component_masses)
+            component_unit = identify_unit(component_mass_column[0])
+            component_mass = component_masses[component_mass_column]
+            component_mw = component_dict[component_name]['Molecular Weight (g/mol)']
+            stock_volumes = calculate_stock_volumes_mass_units(component_mass, component_unit, stock_concentration, stock_unit, stock_density, component_mw)
+            
+        if component_conc_unit in ('volf', 'molarity', 'mgpermL') and stock_unit in ('volf'): # hmm this is odd, but essentially if you see volf with it is just easier to use volumes as the basis over mass, but be careful since you can calualte
+            #so leave both the option to use all masses or if everything has defined density then okay to use, this was more made for pure liquids
+            component_volume_column = find_component_column(component_name, component_volumes)
+            component_unit = identify_unit(component_volume_column[0])
+            component_volume = component_volumes[component_volume_column]
+            
+            stock_volumes = calculate_stock_volumes_vol_units(component_volume, component_unit, stock_concentration, stock_unit)
+        
+        complete_component_df[stock_name + ' amount volume mL'] = stock_volumes
+    return complete_component_df
+
+
+def calculate_stock_volumes_from_component_masses(plan, complete_component_df, stock_dict): # this can be trouble some since it restirct you from ever mixing volf and the other units, it makes all basis of mass, what instead should be done is basedon the unit of both the stock and component it should direct to appropiate function
     """Used to calculate stock volume from component volumes. This pathway is only appropiate when dealing with component masses and stock units of wtf, molarity, and mgpermL.
     This is still under the assumption of one component + one solvent = one stock and that the complete_component_df headers will be in the form componentname_rest of column.
     """
