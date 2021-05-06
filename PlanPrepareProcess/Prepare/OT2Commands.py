@@ -250,7 +250,7 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):
     for line in protocol.commands(): 
         print(line)  
 
-def pipette_volumes_component_wise_fixing(protocol, directions, loaded_labware_dict, stock_to_pipette_order=None):    
+def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, stock_to_pipette_order=None):    
     small_pipette = loaded_labware_dict['Small Pipette']
     small_tiprack = loaded_labware_dict['Small Tiprack']
     large_pipette = loaded_labware_dict['Large Pipette']
@@ -259,28 +259,25 @@ def pipette_volumes_component_wise_fixing(protocol, directions, loaded_labware_d
     if stock_to_pipette_order is None:
         stock_to_pipette_order = directions[0].keys()
     
-    # stock_positions_sublists = []
-    # stock_volumes_sublists = []
-    # destination_well_position_sublists = []
     for stock_name in stock_to_pipette_order:
-    #     single_stock_volumes = [] # only need to save this if checking for distribute
-    #     single_stock_positions = []
-    #     dest_well_positions = []
-
-        pipette.pick_up_tip()
+        small_pipette.pick_up_tip()
+        large_pipette.pick_up_tip()
         for stock_index, stock_instructions in directions.items():
             single_stock_instructions = stock_instructions[stock_name]
             stock_volume_to_pull = single_stock_instructions['Stock Volume']
             stock_position_to_pull = single_stock_instructions['Stock Position']
             destination_well = single_stock_instructions['Destination Well Position']
-    #         single_stock_volumes.append(stock_volume_to_pull)
-    #         single_stock_positions.append(stock_position_to_pull)
-    #         dest_well_positions.append(destination_well)
-            pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack) # this is hard becasue you still need to have the switching cases 
 
+            if small_pipette.min_volume <= stock_volume_to_pull <= small_pipette.max_volume or stock_volume_to_pull==0:
+                pipette = small_pipette
+            elif large_pipette.min_volume <= stock_volume_to_pull:
+                pipette = large_pipette
+            else: 
+                raise AssertionError('Pipettes not suitable for volume', stock_volume_to_pull)
+           
             pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never')
-            pipette.return_tip()
-
+        small_pipette.return_tip()
+        large_pipette.return_tip()
     for line in protocol.commands(): 
         print(line)  
 
