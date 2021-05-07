@@ -229,6 +229,7 @@ def find_stock_to_pull(stock_name, well_index, stocks_position_dict): # could ge
 
 
 def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):    
+    protocol.home()
     small_pipette = loaded_labware_dict['Small Pipette']
     small_tiprack = loaded_labware_dict['Small Tiprack']
     large_pipette = loaded_labware_dict['Large Pipette']
@@ -251,6 +252,7 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):
         print(line)  
 
 def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, stock_to_pipette_order=None):    
+    protocol.home()
     small_pipette = loaded_labware_dict['Small Pipette']
     small_tiprack = loaded_labware_dict['Small Tiprack']
     large_pipette = loaded_labware_dict['Large Pipette']
