@@ -141,6 +141,7 @@ def stock_well_ranges(volume_df, loaded_dict, limit):
     return stock_info_to_pull
 
 def create_sample_making_directions(volume_df, stock_position_info, loaded_labware_dict):    
+    volume_df = isolate_common_column(volume_df, 'stock')
     destination_wells = loaded_labware_dict['Destination Wells']
     stock_wells = loaded_labware_dict['Stock Wells'] # might not be needed
     
@@ -343,14 +344,14 @@ def check_for_distribute(list1, min_val, max_val):
 
 def pipette_check(volume_df, pipette_1, pipette_2):
     """Given volumes along with two pipettes in use, will ensure the volumes of the pipette ranges are able to be cover the volumes"""
+    volume_df = isolate_common_column(volume_df, 'stock')
     if pipette_1.max_volume < pipette_2.max_volume:
         small_pipette = pipette_1
         large_pipette = pipette_2
 
     if pipette_1.max_volume > pipette_2.max_volume:
-        small_pipette = pipette_2
+        small_pipette = pipette
         large_pipette = pipette_1
-
     assert volume_df[(volume_df == 0)| (volume_df >= small_pipette.min_volume)].notnull().all().all(), 'Pipettes do not cover appropiate volume ranges'
 
 def labware_check_enough_wells(volumes, loaded_labware_dict):
@@ -375,6 +376,12 @@ def determine_well_volume(well):
     well_volume = well.split(' ')[-4]
     return well_volume
 
+
+def isolate_common_column(df, common_string):
+    cols = df.columns
+    common_string_cols = [col for col in cols if common_string in col]
+    final_df = df.copy()[common_string_cols]
+    return final_df
 ###################################### Require Further Testing ###################################################################################
 
 

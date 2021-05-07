@@ -63,17 +63,18 @@ def concentration_from_excel(excel_path):
     concentration_df = concentration_df.astype(float)
     return concentration_df
 
-def concentration_from_linspace(component_names, component_linspaces, component_units, unity_filter = False):
+def concentration_from_linspace(component_names, component_linspaces, component_units, unity_filter = False, component_spacing_type='linear'):
     """ Uses linspaces to create a mesh of component concentrations. The linspaces are pulled from a csv plan where all arguments are in parellel (i.e position 1 of arugment 1 refers to position 1 of argument 2). 
     Hence linspaces pulled from plan are requried to match with component names and component unit arguments. The only exception is that you may leave the last linspace unspecified if you looking to complete the argument 
     using a unity filter. The application of the unity filter looks at the last position in the component names list and uses the other calculated component concentration values to find the difference of 1 to complete a sample concentration values. 
     """
 
-    component_spacing_type = 'linear'
     conc_range_list = [] 
     for conc_linspace in component_linspaces:
         if component_spacing_type == "linear": 
             conc_range_list.append(np.linspace(*conc_linspace))
+        elif component_spacing_type == "log": 
+            conc_range_list.append(np.logspace(*conc_linspace))
     conc_grid = np.meshgrid(*conc_range_list)
 
     component_conc_dict = {} 
@@ -485,26 +486,71 @@ def calculate_total_stock_volumes(complete_df):
     return complete_df
 
 def convert_mL_to_uL(volumes_df): # switch this to be the dictionary using https://stackoverflow.com/questions/45468630/change-column-names-in-pandas-dataframe-from-a-list
+    volumes_df = volumes_df.copy()
     columns_mL = [col for col in volumes_df if 'mL' in col]
     columns_uL = [col_mL.replace('mL', 'uL') for col_mL in columns_mL]
-    volumes_df = volumes_df[columns_mL]
-    volumes_uL = volumes_df*1000
-    volumes_uL.columns = columns_uL
-    return volumes_uL
+    volumes_uL = volumes_df[columns_mL]*1000
 
+    volumes_df[columns_mL] = volumes_uL
+    replace_dict = {mL:uL for uL, mL in zip(columns_uL, columns_mL)}
+    volumes_df_uL = volumes_df.rename(columns=replace_dict)
+
+    volumes_df_uL
+
+    return volumes_df_uL
+
+def remove_duplicates(df, sigfigs):
+    df = df.round(sigfigs)
+    df.drop_duplicates(inplace=True)
+    df.reset_index(inplace=True, drop=True)
+    return df
+
+def filter_total_volume_restriction_df(df, max_total_volume):
+    column_names = df.columns
+    total_column_name = [column_name for column_name in column_names if "Total Sample Volume" in column_name][0]
+    df_unfiltered = df.copy()
+    df = df[df[total_column_name] <= max_total_volume]
+    if df.empty is True:
+        raise AssertionError("No suitable samples available to create due to TOTAL SAMPLE VOLUME being too high, reconsider labware or total sample mass/volume", df_unfiltered[total_column_name])
+    return df
+ 
+def filter_general_max_restriction(df, max_value, column_name):
+    df_unfiltered = df.copy()
+    df = df[df[column_name] <= max_value]
+    if df.empty is True:
+        raise AssertionError("No suitable samples available to create due to general filter being to low")
+    return df
+
+def filter_general_min_pipette_restriction(df, min_pipette_volume):
+    column_names = df.columns
+    stock_column_names = [column_name for column_name in column_names if "stock" in column_name]
+    df_unfiltered = df.copy()
+    
+    for i, stock_column in enumerate(stock_column_names):
+        df = df[df[stock_column] >= 0] # filtering all samples less than 0 
+        if df.empty is True:
+                raise AssertionError(stock_column + ' volumes contains only negative volumes. df series printed below', df_unfiltered[stock_column])
+
+        df = df[(df[stock_column] >= min_pipette_volume) | (df[stock_column] == 0)] # filtering all samples that are less than miniumum pipette value and are NOT zero
+        if df.empty is True:
+            raise AssertionError(stock_column + ' volumes are below the pipette minimum of' + str(min_pipette_volume) + 'df series printed below', df_unfiltered[stock_column])
+
+     
+    return df 
 
 ##################### In progress ##############################
 
-def concentration_from_linspace_all_info(plan, unity_filter = False): # if you go this route you can do whole dataframe operation you just need to verify all component units of the same type
+def concentration_from_linspace_all_info(plan, unity_filter = False, component_spacing = 'linear'): # if you go this route you can do whole dataframe operation you just need to verify all component units of the same type
     """ Uses linspaces to create a mesh of component concentrations
     """
     component_linspaces = plan['Component Concentration Linspaces [min, max, n]']
-    component_spacing_type = 'linear'
 
     conc_range_list = [] 
     for conc_linspace in component_linspaces:
         if component_spacing_type == "linear": 
             conc_range_list.append(np.linspace(*conc_linspace))
+        elif component_spacing_type == "log": 
+            conc_range_list.append(np.logspace(*conc_linspace))
     conc_grid = np.meshgrid(*conc_range_list)
     
     total_sample_amount = plan['Sample Amount']
