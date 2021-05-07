@@ -51,6 +51,7 @@ def concentration_from_csv(csv_path):
     Data is formatted based on column and spacing, hence in a csv the first row will headers seperated by commas and the next row will 
     be respective header values seperated by commas."""
     concentration_df = pd.read_csv(csv_path)
+    concentration_df = concentration_df.astype(float)
     return concentration_df 
 
 def concentration_from_excel(excel_path):
@@ -59,6 +60,7 @@ def concentration_from_excel(excel_path):
     Ensure the headers match the names of components of a plan as information
     """
     concentration_df = pd.read_excel(excel_path)
+    concentration_df = concentration_df.astype(float)
     return concentration_df
 
 def concentration_from_linspace(component_names, component_linspaces, component_units, unity_filter = False):
