@@ -5,8 +5,6 @@ import csv
 import ast
 import datetime
 from pytz import timezone
-import csv
-
 
 mass_dictionary = {'g':1} # should build a dictionary of units people can add to such that not restricted to hardcoded ones
 
@@ -418,7 +416,54 @@ def calculate_common_solvent_missing():
    
     pass
 
+def add_final_location(directions, complete_df, unique_identifier= None):    
+    complete_df = complete_df.copy()
+    info = []
+    for i, sample_info in directions.items():
+        for stock, variable in sample_info.items():
+            final_well_destination = variable['Destination Well Position']
+        info.append(final_well_destination)    
+    time = datetime.datetime.today().strftime('%m-%d-%Y') # str(datetime.datetime.now(timezone('US/Pacific')).date()) # should be embaded once you run
 
+    wells = []
+    labwares = []
+    slots = []
+    info_cut = info #info only being used of length of number of samples
+    for info in info_cut:
+        # string consist of three components, well_of_labware__on_slot with of and on being the seperators which is native and consistent across all OT2 protocols
+        string = str(info)
+        lower_seperator = 'of'
+        upper_seperator = 'on'
+
+        lower_seperator_index = string.index(lower_seperator)
+        upper_seperator_index = string.rindex(upper_seperator)
+        well = string[:lower_seperator_index-1]
+        labware = string[lower_seperator_index + len(lower_seperator)+ 1:upper_seperator_index-1]
+        slot = string[upper_seperator_index+len(upper_seperator)+1:]
+
+        wells.append(well)
+        labwares.append(labware)
+        slots.append(slot)
+
+    unique_identifier = None
+    UIDs = []
+    for slot, labware, well in zip(slots, labwares, wells):
+        UID = "S" + slot + "_" + well + "_" + time  # add name of interest here to make it easier to identify
+        if unique_identifier is not None: 
+            UID = UID + "_" + str(unique_identifier)
+        UIDs.append(UID)
+
+    complete_df.insert(0, 'UID', UIDs)
+    complete_df.insert(1, 'Labware', labwares)
+    complete_df.insert(2, 'Slot', slots)
+    complete_df.insert(3, 'Well', wells)
+    return complete_df
+
+def create_labels_for_plate():
+    pass
+
+def create_labels_for_wells():
+    pass
 
 #### These are utility function no single use 
 
