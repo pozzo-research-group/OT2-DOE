@@ -246,7 +246,7 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):
             
             pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack)
             pipette.pick_up_tip(tiprack_wells[stock_index])
-            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', air_gap=20)
+            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', air_gap=20, blow_out=True, blow_out_location= 'destintation well')
             protocol.delay(seconds=5)
             pipette.return_tip()
 
@@ -278,7 +278,8 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, st
                 pipette = large_pipette
             else: 
                 raise AssertionError('Pipettes not suitable for volume', stock_volume_to_pull)
-            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', air_gap=20)
+            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', air_gap=20) # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
+            pipette.blow_out(destination_well)
             protocol.delay(seconds=3)
         small_pipette.return_tip()
         large_pipette.return_tip()
