@@ -7,10 +7,8 @@ Stock Names,"['dppc-ethanol-stock', 'dspepeg2000-ethanol-stock', 'pfh-ethanol-st
 Stock Concentration Units,"[ 'molarity','molarity','wtf', 'wtf','wtf']"
 Stock Concentrations,"[0.002724647,0.0003,0.01,1,1]"
 Stock Density (g/mL) (only for wtf),"[0.79, 0.79, 0.79, 0.79, 1]"
-OT2 Stock Dispensing Order,"[1,2,3,4,5]"
 OT2 Destination Labwares,"[""falcon_48_wellplate_1500ul"", ""falcon_48_wellplate_1500ul"",""falcon_48_wellplate_1500ul""]"
 OT2 Destination Labware Slots,"[""2"",""3"",""5"" ]"
-OT2 Sample Labware Start,0
 OT2 Stock Labwares,"[""20mlscintillation_12_wellplate_18000ul"",""20mlscintillation_12_wellplate_18000ul""]"
 OT2 Stock Labware Slots,"[""1"",""4""]"
 OT2 Stock Labware Stock Order,"[1,2,3,4,5]"
@@ -25,10 +23,7 @@ OT2 Right Pipette Dispense Rate (uL/sec),1000
 OT2 Right Tipracks,"[""opentrons_96_tiprack_1000ul"", ""opentrons_96_tiprack_1000ul""]"
 OT2 Right Tiprack Slots,"[""11"",""8""]"
 OT2 Bottom Dispensing Clearance (mm),30
-OT2 Single Transfer From Dest Volume (uL),300
-OT2 Single Transfer From Dest Labwares,"[""corning_96_wellplate_360ul_flat"", ""corning_96_wellplate_360ul_flat""]"
-OT2 Single Transfer From Dest Slots,"[""6"", ""9""]"
-OT2 Single Transfer Pipette Dispense Rate (uL/sec),51
-OT2 Single Transfer Pipette Aspiration Rate (uL/sec),123
-OT2 Single Transfer From Dest Bottom Dispensing Clearance (mm),15
-OT2 Single Transfer From Dest Bottom Aspirating Clearance (mm),1
+OT2 Bottom Asipiration Clearence (mm) - In progress,None
+OT2 Bottom Dispensing Clearance (mm) - In progress,None
+OT2 Air Gap - In progress,None
+"OT2 Mixing [times, volume] - In progress",None
