@@ -445,7 +445,6 @@ def add_final_location(directions, complete_df, unique_identifier= None):
         labwares.append(labware)
         slots.append(slot)
 
-    unique_identifier = None
     UIDs = []
     for slot, labware, well in zip(slots, labwares, wells):
         UID = "S" + slot + "_" + well + "_" + time  # add name of interest here to make it easier to identify
