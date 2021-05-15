@@ -26,8 +26,8 @@ OT2 Bottom Dispensing Clearance (mm) - In progress,None
 OT2 Air Gap - In progress,None
 "OT2 Mixing [times, volume] - In progress",None
 OT2 Single Transfer From Dest Volume (uL),300
-OT2 Single Transfer From Dest Labwares,"[""fischer_24_wellplate_7400ul"", ""fischer_24_wellplate_7400ul""]"
-OT2 Single Transfer From Dest Slots,"[""6"", ""9""]"
+OT2 Single Transfer From Dest Labwares,"[""corning_96_wellplate_360ul_flat""]"
+OT2 Single Transfer From Dest Slots,"[8]"
 OT2 Single Transfer Pipette Dispense Rate (uL/sec),51
 OT2 Single Transfer Pipette Aspiration Rate (uL/sec),123
 OT2 Single Transfer From Dest Bottom Dispensing Clearance (mm),15
