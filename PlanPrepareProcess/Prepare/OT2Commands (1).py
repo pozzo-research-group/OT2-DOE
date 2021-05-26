@@ -146,8 +146,8 @@ def create_sample_making_directions(volume_df, stock_position_info, loaded_labwa
     stock_wells = loaded_labware_dict['Stock Wells'] # might not be needed
     
     # checking if labware and pipette is appropiate before moving forward
-    labware_check_enough_wells(volume_df, loaded_labware_dict)
-    labware_check_enough_volume(volume_df, loaded_labware_dict)
+    # labware_check_enough_wells(volume_df, loaded_labware_dict)
+    # labware_check_enough_volume(volume_df, loaded_labware_dict)
     pipette_check(volume_df, loaded_labware_dict['Left Pipette'], loaded_labware_dict['Right Pipette'])
 
     sample_making_dict = {}
@@ -246,8 +246,7 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):
             
             pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack)
             pipette.pick_up_tip(tiprack_wells[stock_index])
-            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', air_gap=20, blow_out=True, blow_out_location= 'destintation well')
-            protocol.delay(seconds=5)
+            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never')
             pipette.return_tip()
 
     for line in protocol.commands(): 
@@ -272,15 +271,16 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, st
             stock_position_to_pull = single_stock_instructions['Stock Position']
             destination_well = single_stock_instructions['Destination Well Position']
 
-            if small_pipette.min_volume <= stock_volume_to_pull <= small_pipette.max_volume or stock_volume_to_pull==0:
+            if stock_volume_to_pull == 0:
+                pass
+
+            elif small_pipette.min_volume <= stock_volume_to_pull <= small_pipette.max_volume or stock_volume_to_pull==0:
                 pipette = small_pipette
             elif large_pipette.min_volume <= stock_volume_to_pull:
                 pipette = large_pipette
             else: 
                 raise AssertionError('Pipettes not suitable for volume', stock_volume_to_pull)
-            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', air_gap=20) # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
-            pipette.blow_out(destination_well)
-            protocol.delay(seconds=3)
+            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never') # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
         small_pipette.return_tip()
         large_pipette.return_tip()
     for line in protocol.commands(): 
