@@ -558,7 +558,7 @@ def stock_components(stock_name):
     return stock_solutes, stock_solvents
 
 
-def calculate_stock_prep_df(experiment_dict, volume_df, chem_database_path, buffer_pct = 40):
+def calculate_stock_prep_df(plan, volume_df, stock_dict, buffer_pct = 40):
     
     # Isolate all stock volume entries in dataframe
     cols = volume_df.columns

@@ -390,7 +390,7 @@ def calculate_common_solvent_residual_volumes(complete_df, stock_dict):
     complete_df = complete_df.copy() # why is this necessary
     stock_volumes = isolate_common_column(complete_df, 'stock')
     
-    stock_names = [identify_component_name(col) for col in stock_volumes if 'stock' in col] # this is seperate from the dict since your dict can have more stocks just need ot have the same name
+    stock_names = [identify_component_name(col) for col in stock_volumes if 'stock' in col] # this is seperate from the dict since your dict can have more stocks than present in the df
     
     pure_common_solvent_stocks = [stock_name for stock_name in stock_names if stock_dict[stock_name]['Common Solvent'] == 'Pure']
     mixture_common_solvent_stocks = [stock_name for stock_name in stock_names if stock_dict[stock_name]['Common Solvent'] == 'Mixture']
@@ -549,13 +549,14 @@ def remove_duplicates(df, sigfigs):
     df.reset_index(inplace=True, drop=True)
     return df
 
-def filter_total_volume_restriction_df(df, max_total_volume):
+def filter_total_volume_restriction(df, max_total_volume):
     column_names = df.columns
-    total_column_name = [column_name for column_name in column_names if "Total Sample Volume" in column_name][0]
-    df_unfiltered = df.copy()
-    df = df[df[total_column_name] <= max_total_volume]
+    stock_column_names = [column_name for column_name in column_names if "stock" in column_name]
+    stocks = df[stock_column_names]
+    df['Total Volume'] = stocks.sum(axis=1)
+    df = df[df['Total Volume']  <= max_total_volume]
     if df.empty is True:
-        raise AssertionError("No suitable samples available to create due to TOTAL SAMPLE VOLUME being too high, reconsider labware or total sample mass/volume", df_unfiltered[total_column_name])
+        raise AssertionError("No suitable samples available to create due to TOTAL SAMPLE VOLUME being too high, reconsider labware or total sample mass/volume")
     return df
  
 def filter_general_max_restriction(df, max_value, column_name):
@@ -668,3 +669,65 @@ def find_best_header_match(df, string):
     
     match = [col for col in df if string in col][0]
     return match
+
+def calculate_stock_prep_df(plan, volume_df, stock_dict, buffer_pct = 40):
+    
+    # Isolate all stock volume entries in dataframe
+    cols = volume_df.columns
+    stock_cols = [col for col in cols if "stock" in col]
+    stock_df = volume_df.copy()[stock_cols]
+    
+    # Compound volumes and add buffer
+    stock_df.loc['Total Volume'] = stock_df.sum(numeric_only=True, axis=0)*(1+(buffer_pct/100))
+    prep_df = pd.DataFrame(stock_df.loc['Total Volume']).T
+    
+    # Ensure all unit are same then convet to liters for calculations, latter is not 100% necessary
+    check_unit_congruence(prep_df)
+    prep_df = convert_to_liter(prep_df)
+    
+    # Add the concentration and respective units (may have this be arguments instead since only would be +1)
+    prep_df.loc['Final Selected Stock Concentrations'] = experiment_dict['Final Selected Stock Concentrations']
+    prep_df.loc['Stock Concentration Units'] = experiment_dict['Stock Concentration Units']
+    
+    chem_database_df = pd.read_excel(chem_database_path)
+    
+    prep_dicts = {}
+    for stock in prep_df:
+        total_volume = prep_df[stock]['Total Volume']
+        stock_unit = prep_df[stock]['Stock Concentration Units']
+        stock_conc = prep_df[stock]['Final Selected Stock Concentrations']
+        solutes, solvent = stock_components(stock) # currently only one solvent and solute supported
+
+        #All stocks will obvi have a solvent, but the solute is optional
+        solvent_component_info = chem_database_df.loc[chem_database_df['Component Abbreviation'] == solvent]
+        solvent_density = solvent_component_info['Density (g/L)'].iloc[0]
+
+        if not solutes: # if no solutes present
+            solute_mass = 0
+            solute_volume = 0
+            solvent_volume = total_volume
+            solvent_mass = solvent_volume*solvent_density
+            prep_dict = {'solute mass g': solute_mass,
+               'solute volume L': solute_volume,
+               'solvent mass g': solvent_mass,
+               'solvent volume L': solvent_volume}
+
+        if solutes: 
+            solute = solutes[0]
+            solute_component_info = chem_database_df.loc[chem_database_df['Component Abbreviation'] == solute] # add assertion to ensure component in database
+
+            if stock_unit == 'molarity':
+                solute_mw = solute_component_info['Molecular Weight (g/mol)'].iloc[0] # only call info if needed, if common between units then pull up one level
+                solute_density = solute_component_info['Density (g/L)'].iloc[0]
+                prep_dict = stock_molarity(total_volume, stock_conc, solute_mw, solute_density, solvent_density)
+
+            if stock_unit == 'wtf':
+                # since no density data available at the moment need to rough estimate, does not matter since the mass is scaled according to wtf, so long as more.
+                solute_density = solute_component_info['Density (g/L)'].iloc[0]
+                density_mix = bimixture_density_wtf(stock_conc, solute_density, solvent_density)
+                total_mass = total_volume*density_mix
+                prep_dict = stock_wtf(total_mass, stock_conc, 1-stock_conc, solute_density, solvent_density)
+        prep_dicts[stock] = prep_dict
+    stock_prep_df = pd.DataFrame.from_dict(prep_dicts) # add total volumes
+    stock_complete_df = pd.concat([prep_df,stock_prep_df])
+    return stock_prep_df
