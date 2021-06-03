@@ -1,12 +1,12 @@
-Sample Amount,0.5
+Sample Amount,0.7
 Sample Unit,"""g"""
 Component Shorthand Names,"[ '5CB', 'SDS', 'ethanol','water']"
 Component Concentration Units,"['wtf', 'wtf',  'wtf', 'wtf']"
-"Component Concentration Linspaces [min, max, n]","[[0, 1e-3,6], [5e-5, 5e-4, 2], [0.1,0.9,9]]"
+"Component Concentration Linspaces [min, max, n]","[[0, 1e-3,5], [0, 5e-4, 3], [0.1,0.8,8]]"
 Stock Names,"['5CB-ethanol-stock', 'SDS-ethanol-stock', 'ethanol-stock', 'water-stock']"
-Stock Concentration Units,"['mgpermL', 'molarity', 'wtf', 'wtf']"
-Stock Concentrations,"[2.5, 1e-3, 0.5, 1]"
-Stock Densities (g/mL),"[0.789, 0.789, 1]"
+Stock Concentration Units,"['mgpermL','mgpermL', 'wtf', 'wtf']"
+Stock Concentrations,"[2.5, 1.75, 0.5, 1]"
+Stock Densities (g/mL),"[0.789, 0.789, 0.789, 1]"
 OT2 Destination Labwares,"[""falcon_48_wellplate_1500ul"", ""falcon_48_wellplate_1500ul"",""falcon_48_wellplate_1500ul""]"
 OT2 Destination Labware Slots,"[2,3,5]"
 OT2 Sample Labware Start,0
