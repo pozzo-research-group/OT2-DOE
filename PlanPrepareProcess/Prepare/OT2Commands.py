@@ -141,6 +141,7 @@ def stock_well_ranges(volume_df, loaded_dict, limit):
     return stock_info_to_pull
 
 def create_sample_making_directions(volume_df, stock_position_info, loaded_labware_dict, start_position=0):    
+    volume_df = volume_df.reset_index(drop=True)
     volume_df = isolate_common_column(volume_df, 'stock')
     destination_wells = loaded_labware_dict['Destination Wells']
     stock_wells = loaded_labware_dict['Stock Wells'] # might not be needed
