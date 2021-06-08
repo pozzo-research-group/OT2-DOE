@@ -2,7 +2,7 @@ Sample Amount,1
 Sample Unit,"""g"""
 Component Shorthand Names,"[ '5CB', 'SDS', 'ethanol','water']"
 Component Concentration Units,"['wtf', 'wtf',  'wtf', 'wtf']"
-"Component Concentration Linspaces [min, max, n]","[[0, 1e-3,5], [0, 5e-4, 3], [0.1,0.8,10]]"
+"Component Concentration Linspaces [min, max, n]","[[0, 1e-3,5], [0, 2.5e-4, 2], [0.1,0.8,10]]"
 Stock Names,"['5CB-ethanol-stock', 'SDS-ethanol-stock', 'ethanol-stock', 'water-stock']"
 Stock Concentration Units,"['mgpermL','mgpermL', 'wtf', 'wtf']"
 Stock Concentrations,"[2.5, 1.75, 1, 1]"
