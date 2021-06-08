@@ -147,8 +147,8 @@ def create_sample_making_directions(volume_df, stock_position_info, loaded_labwa
     stock_wells = loaded_labware_dict['Stock Wells'] # might not be needed
     
     # checking if labware and pipette is appropiate before moving forward
-    # labware_check_enough_wells(volume_df, loaded_labware_dict)
-    # labware_check_enough_volume(volume_df, loaded_labware_dict)
+    labware_check_enough_wells(volume_df, loaded_labware_dict)
+    labware_check_enough_volume(volume_df, loaded_labware_dict)
     pipette_check(volume_df, loaded_labware_dict['Left Pipette'], loaded_labware_dict['Right Pipette'])
 
     sample_making_dict = {}
@@ -363,7 +363,7 @@ def pipette_check(volume_df, pipette_1, pipette_2):
         large_pipette = pipette_2
 
     if pipette_1.max_volume > pipette_2.max_volume:
-        small_pipette = pipette
+        small_pipette = pipette_2
         large_pipette = pipette_1
     assert volume_df[(volume_df == 0)| (volume_df >= small_pipette.min_volume)].notnull().all().all(), 'Pipettes do not cover appropiate volume ranges'
 
@@ -386,7 +386,7 @@ def labware_check_enough_volume(volumes_df, loaded_labware_dict):
     assert (total_sample_volumes < well_volume).all(), 'Sample volumes are exceeding max destination well volume of ' + str(well_volume) + 'uL'
 
 def determine_well_volume(well):
-    well_volume = well.split(' ')[-4]
+    well_volume = str(well).split(' ')[-4]
     return well_volume
 
 
