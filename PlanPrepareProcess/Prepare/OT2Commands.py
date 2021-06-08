@@ -363,7 +363,7 @@ def pipette_check(volume_df, pipette_1, pipette_2):
         large_pipette = pipette_2
 
     if pipette_1.max_volume > pipette_2.max_volume:
-        small_pipette = pipette_2
+        small_pipette = pipette
         large_pipette = pipette_1
     assert volume_df[(volume_df == 0)| (volume_df >= small_pipette.min_volume)].notnull().all().all(), 'Pipettes do not cover appropiate volume ranges'
 
