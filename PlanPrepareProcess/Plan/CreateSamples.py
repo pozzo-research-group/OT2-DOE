@@ -416,14 +416,18 @@ def calculate_common_solvent_missing():
    
     pass
 
-def add_final_location(directions, complete_df, unique_identifier= None):    
+def add_final_location(directions, complete_df, unique_identifier= None, date_MM_DD_YY=None):    
     complete_df = complete_df.copy()
     info = []
     for i, sample_info in directions.items():
         for stock, variable in sample_info.items():
             final_well_destination = variable['Destination Well Position']
         info.append(final_well_destination)    
-    time = datetime.datetime.today().strftime('%m-%d-%Y') # str(datetime.datetime.now(timezone('US/Pacific')).date()) # should be embaded once you run
+    
+    if date_MM_DD_YY is not None:
+        time = date_MM_DD_YY
+    else:
+        time = datetime.datetime.today().strftime('%m-%d-%Y') # str(datetime.datetime.now(timezone('US/Pacific')).date()) # should be embaded once you run
 
     wells = []
     labwares = []
