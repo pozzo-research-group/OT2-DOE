@@ -2,14 +2,13 @@ Sample Amount,1.2
 Sample Unit,"""g"""
 Component Shorthand Names,"[ 'ODE', 'SDS', 'ethanol','water']"
 Component Concentration Units,"['wtf', 'wtf',  'wtf', 'wtf']"
-"Component Concentration Linspaces [min, max, n]","[[0, 1e-3,10], [0.005, 0.005, 1], [0.1,0.8,10]]"
+"Component Concentration Linspaces [min, max, n]","[[0, 1e-3,10], [0.0005, 0.0005, 1], [0.1,0.8,8]]"
 Stock Names,"['ODE-ethanol-stock', 'SDS-ethanol-stock', 'ethanol-stock', 'water-stock']"
 Stock Concentration Units,"['mgpermL','mgpermL', 'wtf', 'wtf']"
-Stock Concentrations,"[5, 20, 1, 1]"
+Stock Concentrations,"[5, 10, 1, 1]"
 Stock Densities (g/mL),"[0.789, 0.789, 0.789, 1]"
-OT2 Destination Labwares,"[""abgene_96_wellplate_2200ul"", ""abgene_96_wellplate_2200ul""]"
-OT2 Destination Labware Slots,"[2,3]"
-OT2 Sample Labware Start,0
+OT2 Destination Labwares,"[""abgene_96_wellplate_2200ul""]"
+OT2 Destination Labware Slots,[2]
 OT2 Stock Labwares,"[""20mlscintillation_12_wellplate_18000ul"",""20mlscintillation_12_wellplate_18000ul""]"
 OT2 Stock Labware Slots,"[""1"",""4""]"
 OT2 Stock Labware Stock Order,"[1,2,3,4,5]"
