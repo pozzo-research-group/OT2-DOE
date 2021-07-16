@@ -32,18 +32,22 @@ def object_to_object_list(protocol, stock_object_names, stock_object_slots):
    
     return labware_objects
 
-def object_list_to_well_list(labware_objects):
+def object_list_to_well_list(labware_objects, well_order = 'row'):
     """Labware list loaded is made into concatenated list of the all labwares
     in order of the object in the initally loaded list."""
-    
-    all_wells_row_order = [] 
-    for labware in labware_objects:
-        rows = [well for row in labware.rows() for well in row]
-        all_wells_row_order = all_wells_row_order + rows
-    
-    return all_wells_row_order
 
-def loading_labware(protocol, experiment_dict):
+    all_wells_order = [] 
+    for labware in labware_objects:
+        if well_order == 'row':
+            wells = [well for row in labware.rows() for well in row]
+        if well_order == 'column':
+            wells = [well for columns in labware.columns() for well in columns]
+            
+        all_wells_order = all_wells_order + wells
+    
+    return all_wells_order
+
+def loading_labware(protocol, experiment_dict, well_order = 'row'):
     """ Loads the required labware given information from a loaded csv dictionary. The labware, which
     include pipettes, plates and tipracks are tied to the protocol object argurment. Returned is a dcitonary 
     containing the important object instances to be used in subsequent functions alongside the original protocol instance."""
@@ -55,30 +59,30 @@ def loading_labware(protocol, experiment_dict):
     dest_labware_names = experiment_dict['OT2 Destination Labwares']
     dest_labware_slots = experiment_dict['OT2 Destination Labware Slots']
     dest_labware_objects = object_to_object_list(protocol, dest_labware_names, dest_labware_slots)
-    dest_wells = object_list_to_well_list(dest_labware_objects)
+    dest_wells = object_list_to_well_list(dest_labware_objects, well_order = well_order)
     
     stock_labware_names = experiment_dict['OT2 Stock Labwares']
     stock_labware_slots = experiment_dict['OT2 Stock Labware Slots']
     stock_labware_objects = object_to_object_list(protocol, stock_labware_names, stock_labware_slots)
-    stock_wells = object_list_to_well_list(stock_labware_objects)
+    stock_wells = object_list_to_well_list(stock_labware_objects, well_order = well_order)
     
     # Loading pipettes and tipracks
     
     right_tiprack_names = experiment_dict['OT2 Right Tipracks']
     right_tiprack_slots = experiment_dict['OT2 Right Tiprack Slots']
     right_tipracks = object_to_object_list(protocol, right_tiprack_names, right_tiprack_slots)
-    right_tiprack_wells = object_list_to_well_list(right_tipracks)
+    right_tiprack_wells = object_list_to_well_list(right_tipracks, well_order = well_order)
 
     right_pipette = protocol.load_instrument(experiment_dict['OT2 Right Pipette'], 'right', tip_racks = right_tipracks)
     right_pipette.flow_rate.aspirate = experiment_dict['OT2 Right Pipette Aspiration Rate (uL/sec)']
     right_pipette.flow_rate.dispense = experiment_dict['OT2 Right Pipette Dispense Rate (uL/sec)']    
     right_pipette.well_bottom_clearance.dispense = experiment_dict['OT2 Bottom Dispensing Clearance (mm)']
+    
 
     left_tiprack_names = experiment_dict['OT2 Left Tipracks']
     left_tiprack_slots = experiment_dict['OT2 Left Tiprack Slots']
     left_tipracks = object_to_object_list(protocol, left_tiprack_names, left_tiprack_slots)
-    left_tiprack_wells = object_list_to_well_list(left_tipracks)
-
+    left_tiprack_wells = object_list_to_well_list(left_tipracks, well_order = well_order)
     
     left_pipette = protocol.load_instrument(experiment_dict['OT2 Left Pipette'], 'left', tip_racks = left_tipracks) # is there a way to ensure the correct tiprack is laoded? maybe simple simualtion test a function
     left_pipette.flow_rate.aspirate = experiment_dict['OT2 Left Pipette Aspiration Rate (uL/sec)']
