@@ -234,8 +234,6 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):  # n
     protocol.home()
     protocol.home()
 
-    # insert drop tip if present, but know 
-
     small_pipette = loaded_labware_dict['Small Pipette']
     small_tiprack = loaded_labware_dict['Small Tiprack']
     large_pipette = loaded_labware_dict['Large Pipette']
@@ -246,15 +244,17 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):  # n
             stock_volume_to_pull = single_stock_instructions['Stock Volume']
             stock_position_to_pull = single_stock_instructions['Stock Position']
             destination_well = single_stock_instructions['Destination Well Position']
-
-            # Now the three pieces of info available volume, destination, source.
-            pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack)
-            # Checking if the machine has tips attached prior
-            if pipette.has_tip:
-                pipette.drop_tip()
-            pipette.pick_up_tip(tiprack_wells[stock_index])
-            pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never')
-            pipette.return_tip()
+            if stock_volume_to_pull == 0:
+                pass
+            else: 
+                # Now the three pieces of info available volume, destination, source.
+                pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack)
+                # Checking if the machine has tips attached prior
+                if pipette.has_tip:
+                    pipette.drop_tip()
+                pipette.pick_up_tip(tiprack_wells[stock_index])
+                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', blow_out = True, blowout_location='destination well')
+                pipette.return_tip()
 
     for line in protocol.commands(): 
         print(line)  
@@ -274,11 +274,9 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, st
         small_pipette.drop_tip()
     if large_pipette.has_tip:
         large_pipette.drop_tip()
-
-    for stock_name in stock_to_pipette_order:
-        small_pipette.pick_up_tip()
-        large_pipette.pick_up_tip()
-        for stock_index, stock_instructions in directions.items():
+    pipette = small_pipette # setting as initial defualt
+    for i, stock_name in enumerate(stock_to_pipette_order):
+        for stock_index, stock_instructions in directions.items(): # this is not the stock index fix it it should be i
             single_stock_instructions = stock_instructions[stock_name]
             stock_volume_to_pull = single_stock_instructions['Stock Volume']
             stock_position_to_pull = single_stock_instructions['Stock Position']
@@ -286,17 +284,40 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, st
 
             if stock_volume_to_pull == 0: # need to make this a pass?
                 pass
-            elif small_pipette.min_volume <= stock_volume_to_pull <= small_pipette.max_volume or stock_volume_to_pull==0:
+            elif small_pipette.min_volume <= stock_volume_to_pull <= small_pipette.max_volume:
+                # this small chunk of dropping tip should be made into its own function
+                if pipette == large_pipette and pipette.has_tip == True: # Returning tip if other pipette has tip
+                    pipette.return_tip()
                 pipette = small_pipette
-                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never') # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
+                tiprack = small_tiprack
+                if pipette.has_tip == True:
+                    pass
+                elif pipette.has_tip == False:
+                    pipette.pick_up_tip(tiprack[i])
+                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', touch_tip=True, blow_out = True, blowout_location='destination well') # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
+                pipette.dispense(pipette.max_volume, destination_well)
+                protocol.delay(seconds=3) 
+            
             elif large_pipette.min_volume <= stock_volume_to_pull:
+                if pipette == small_pipette and pipette.has_tip == True:
+                    print('Small Pipette needs to drop tip')
+                    pipette.return_tip()
+                    
+                tiprack = large_tiprack
                 pipette = large_pipette
-                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never') # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
+                if pipette.has_tip == True:
+                    pass
+                elif pipette.has_tip == False:
+                    pipette.pick_up_tip(tiprack[i])
+                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', touch_tip=True, blow_out = True, blowout_location='destination well') # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
+                pipette.dispense(pipette.max_volume, destination_well)
+                protocol.delay(seconds=3) 
             else: 
                 raise AssertionError('Pipettes not suitable for volume', stock_volume_to_pull)
-            
-        small_pipette.drop_tip()
-        large_pipette.drop_tip()
+        if small_pipette.has_tip == True: # these can be made into functions to just check for tip and if so drop
+            small_pipette.drop_tip()
+        if large_pipette.has_tip == True:
+            large_pipette.drop_tip()
     for line in protocol.commands(): 
         print(line)  
 
