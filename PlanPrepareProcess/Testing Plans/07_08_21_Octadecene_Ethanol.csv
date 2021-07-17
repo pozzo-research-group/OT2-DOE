@@ -9,9 +9,8 @@ Stock Concentrations,"[5, 10, 1, 1]"
 Stock Densities (g/mL),"[0.789, 0.789, 0.789, 1]"
 OT2 Destination Labwares,"[""abgene_96_wellplate_2200ul""]"
 OT2 Destination Labware Slots,[2]
-OT2 Stock Labwares,"[""20mlscintillation_12_wellplate_18000ul"",""20mlscintillation_12_wellplate_18000ul""]"
-OT2 Stock Labware Slots,"[""1"",""4""]"
-OT2 Stock Labware Stock Order,"[1,2,3,4,5]"
+OT2 Stock Labwares,"[""20mlscintillation_12_wellplate_18000ul""]"
+OT2 Stock Labware Slots,"[""1""]"
 OT2 Right Pipette,"""p300_single_gen2"""
 OT2 Right Pipette Aspiration Rate (uL/sec),50
 OT2 Right Pipette Dispense Rate (uL/sec),300

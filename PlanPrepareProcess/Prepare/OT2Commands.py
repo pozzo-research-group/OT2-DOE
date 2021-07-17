@@ -2,6 +2,7 @@ import glob
 import os
 import json
 import opentrons.simulate as simulate
+import pandas as pd
 
 # All logic is based on api 2.2+ from opentrons, please read: https://docs.opentrons.com/OpentronsPythonAPIV2.pdf
 # Keep in mind the following: All row based (while OT2 'default' is column based), all sequential (i.e sample 100 will be sample 4 in 96 well plate 2 of 2.) and many arugments are hardcoded to pull from a csv templete (hesistate to change template csv, can add but try not take away). 
@@ -47,7 +48,7 @@ def object_list_to_well_list(labware_objects, well_order = 'row'):
     
     return all_wells_order
 
-def loading_labware(protocol, experiment_dict, well_order = 'row'):
+def loading_labware(protocol, experiment_dict, well_order = 'row',  load_cleaning = False):
     """ Loads the required labware given information from a loaded csv dictionary. The labware, which
     include pipettes, plates and tipracks are tied to the protocol object argurment. Returned is a dcitonary 
     containing the important object instances to be used in subsequent functions alongside the original protocol instance."""
@@ -90,18 +91,33 @@ def loading_labware(protocol, experiment_dict, well_order = 'row'):
     left_pipette.well_bottom_clearance.dispense = experiment_dict['OT2 Bottom Dispensing Clearance (mm)']
     
     loaded_labware_dict = {'Destination Wells': dest_wells, 
-                           'Stock Wells': stock_wells,
-                           'Left Pipette': left_pipette,
-                           'Left Tiprack Wells': left_tiprack_wells,
-                           'Right Pipette': right_pipette,
-                           'Right Tiprack Wells': right_tiprack_wells
-                           }
-
+                       'Stock Wells': stock_wells,
+                       'Left Pipette': left_pipette,
+                       'Left Tiprack Wells': left_tiprack_wells,
+                       'Right Pipette': right_pipette,
+                       'Right Tiprack Wells': right_tiprack_wells,
+                       'Protocol': protocol}
+    
+    # Load in extra labware like cleaning labware, or maybe pull this out into its own function that adds generally a labware to loaded_dict
+    if load_cleaning == True:
+        cleaning_labware_names = experiment_dict['OT2 Cleaning Labwares']
+        cleaning_labware_slots = experiment_dict['OT2 Cleaning Labware Slots']
+        cleaning_labware_objects = object_to_object_list(protocol, cleaning_labware_names, cleaning_labware_slots)
+        cleaning_wells = object_list_to_well_list(cleaning_labware_objects, well_order = well_order)
+       
+        loaded_labware_dict['Cleaning Wells'] = cleaning_wells
+    
     loaded_labware_dict = determine_pipette_resolution(loaded_labware_dict)
     
     return loaded_labware_dict
 
-def stock_well_ranges(volume_df, loaded_dict, limit):
+def add_labware_to_dict(loaded_dict, labware_key, labware_names_list, labware_slots_list, well_order = 'row'):
+    protocol = loaded_dict['Protocol']
+    labware_objects = object_to_object_list(protocol, labware_names_list, labware_slots_list)
+    wells = object_list_to_well_list(labware_objects, well_order = well_order)
+    loaded_dict[labware_key] = wells
+
+def stock_well_ranges(volume_df, stock_labware_wells, volume_buffer_pct= 10):
     """Given a dataframe of stocks volumes to pipette, will return the ranges of indexes for the volumes
     seperated in such a way to satisfy the volume limitation of current stock labware. Ranges of the indexes are 
     provide in a 2D list with each entry consisting of a lower and a upper_well_index index. 
@@ -109,6 +125,8 @@ def stock_well_ranges(volume_df, loaded_dict, limit):
     Note: dataframe/series indexing is a little different than list indexing """
     
     # will only require protocol if you want to call the 
+    volume_df = pd.DataFrame(volume_df)
+    limit = float(stock_labware_wells[0].max_volume)*(100-volume_buffer_pct)/100
     col_names = [name for name in volume_df.columns if "stock" in name]
     stock_info_to_pull = {}
     
@@ -125,12 +143,9 @@ def stock_well_ranges(volume_df, loaded_dict, limit):
                 range_list.append(index)
         range_list.append(len(series_cs))
         range_list_2D = [range_list[i:i+2] for i in range(0, len(range_list), 2)]
-        stock_info_to_pull[col_name]= {'Ranges':range_list_2D}
+        stock_info_to_pull[col_name]= {'Ranges':range_list_2D, 'Total Volume': series.sum()}
 
-    
-    
     # Now let us add the information of stock position  
-    stock_labware_wells = loaded_dict['Stock Wells']
     stock_position_index = 0
     for col in col_names:
         add_positions_dict = stock_info_to_pull[col]
@@ -233,9 +248,32 @@ def find_stock_to_pull(stock_name, well_index, stocks_position_dict): # could ge
     else:
         raise AssertionError('Well is not covered by current stock, please verify stock well ranges.')
 
+def cleaning_tip_protocol(loaded_dict, cleaning_cycles = 1):
+    """Assumes cleaning labware has already been loaded into loaded_dict with the Key of 'Cleaning Labware' """
+    
+    cleaning_wells = loaded_dict['Cleaning Wells']
+    cleaning_dict = {}
+    for i in range(cleaning_cycles):
+        cleaning_dict_entry = {}
+        well_index = input('Enter Well Index ')
+        cleaning_well = cleaning_wells[int(well_index)]
+        cleaning_dict_entry['well'] = cleaning_well
+        print("Adding " + str(cleaning_well) + ' for washing step')
+        
+        cleaning_delay = input('Enter Cleaning Delay (sec) ')
+        cleaning_dict_entry['delay'] = float(cleaning_delay)
+#         print("Volume to swish " + str(volume_to_swish) + ' for washing step')
 
-def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):  # need to add kwargs for the transfer function   
-    protocol.home()
+        mix_n = input('Enter Times Wanting to mix ')
+        cleaning_dict_entry['mix_n'] = int(mix_n)
+#         print("Mixing " + str(mix_n) + ' times')
+        
+        cleaning_dict['Cleaning ' + str(i)] = cleaning_dict_entry
+    loaded_dict['Cleaning Protocol'] = cleaning_dict
+    return cleaning_dict
+    
+                          
+def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict, reuse_tips = True, clean_tips = False, after_delay_sec = 0, **kwargs):  # need to add kwargs for the transfer function   
     protocol.home()
 
     small_pipette = loaded_labware_dict['Small Pipette']
@@ -243,33 +281,65 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict):  # n
     large_pipette = loaded_labware_dict['Large Pipette']
     large_tiprack = loaded_labware_dict['Large Tiprack']
     
-    for sample_index, stock_instruction in directions.items():
-        for stock_index, (stock_name, single_stock_instructions) in enumerate(stock_instruction.items()):
-            stock_volume_to_pull = single_stock_instructions['Stock Volume']
-            stock_position_to_pull = single_stock_instructions['Stock Position']
-            destination_well = single_stock_instructions['Destination Well Position']
-            if stock_volume_to_pull == 0:
-                pass
-            else: 
-                # Now the three pieces of info available volume, destination, source.
-                pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack)
-                # Checking if the machine has tips attached prior
-                if pipette.has_tip:
-                    pipette.drop_tip()
-                pipette.pick_up_tip(tiprack_wells[stock_index])
-                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', blow_out = True, blowout_location='destination well')
-                pipette.return_tip()
+    if reuse_tips == True: # Case when making alot of samples
+        for sample_index, stock_instruction in directions.items():
+            for stock_index, (stock_name, single_stock_instructions) in enumerate(stock_instruction.items()):
+                stock_volume_to_pull = single_stock_instructions['Stock Volume']
+                stock_position_to_pull = single_stock_instructions['Stock Position']
+                destination_well = single_stock_instructions['Destination Well Position']
+                if stock_volume_to_pull == 0:
+                    pass
+                else: 
+                    # Now the three pieces of info available volume, destination, source.
+                    pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack)
+
+                    if pipette.has_tip: # Checking if the machine has tips attached prior
+                        pipette.drop_tip()
+                    pipette.pick_up_tip(tiprack_wells[stock_index])
+                    # addition of delay before or after transfer??? i feel like delay should only be after a transfer
+                    pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', **kwargs)
+                    protocol.delay(seconds=after_delay_sec)
+                    if clean_tips == True: # Mix components or do other contiminatin features.  
+                        cleaning_protocol = loaded_labware_dict['Cleaning Protocol']
+                        for key, cleaning_n_protocol in cleaning_protocol.items():
+                            cleaning_well = cleaning_n_protocol['well']
+                            cleaning_mix_n = cleaning_n_protocol['mix_n']
+                            cleaning_delay = cleaning_n_protocol['delay']
+                            
+                            pipette.mix(cleaning_mix_n, pipette.max_volume, cleaning_well)
+                            pipette.blow_out(cleaning_well)
+                            protocol.delay(cleaning_delay)
+
+                    pipette.return_tip()
+    
+    if reuse_tips == False: # case when making only a few samples 
+        for sample_index, stock_instruction in directions.items():
+            for stock_index, (stock_name, single_stock_instructions) in enumerate(stock_instruction.items()):
+                stock_volume_to_pull = single_stock_instructions['Stock Volume']
+                stock_position_to_pull = single_stock_instructions['Stock Position']
+                destination_well = single_stock_instructions['Destination Well Position']
+                if stock_volume_to_pull == 0:
+                    pass
+                else: 
+                    # Now the three pieces of info available volume, destination, source.
+                    pipette, tiprack_wells = determine_pipette_tiprack(stock_volume_to_pull, small_pipette, large_pipette, small_tiprack, large_tiprack)
+
+                    if pipette.has_tip: # Checking if the machine has tips attached prior
+                        pipette.drop_tip()
+
+                    pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='always', **kwargs)
 
     for line in protocol.commands(): 
         print(line)  
 
-def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, stock_to_pipette_order=None): # need to add kwargs for the transfer function   
+def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, **kwargs): # need to add kwargs for the transfer function   
     protocol.home()
     small_pipette = loaded_labware_dict['Small Pipette']
     small_tiprack = loaded_labware_dict['Small Tiprack']
     large_pipette = loaded_labware_dict['Large Pipette']
     large_tiprack = loaded_labware_dict['Large Tiprack']
     
+    stock_to_pipette_order=None
     if stock_to_pipette_order is None:
         stock_to_pipette_order = directions[0].keys()
 
@@ -298,13 +368,10 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, st
                     pass
                 elif pipette.has_tip == False:
                     pipette.pick_up_tip(tiprack[i])
-                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', touch_tip=True, blow_out = True, blowout_location='destination well') # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
-                pipette.dispense(pipette.max_volume, destination_well)
-                protocol.delay(seconds=3) 
+                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', **kwargs)
             
             elif large_pipette.min_volume <= stock_volume_to_pull:
                 if pipette == small_pipette and pipette.has_tip == True:
-                    print('Small Pipette needs to drop tip')
                     pipette.return_tip()
                     
                 tiprack = large_tiprack
@@ -313,7 +380,7 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, st
                     pass
                 elif pipette.has_tip == False:
                     pipette.pick_up_tip(tiprack[i])
-                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', touch_tip=True, blow_out = True, blowout_location='destination well') # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
+                pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', **kwargs) # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
                 pipette.dispense(pipette.max_volume, destination_well)
                 protocol.delay(seconds=3) 
             else: 
