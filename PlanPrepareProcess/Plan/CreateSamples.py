@@ -89,6 +89,29 @@ def concentration_from_linspace(component_names, component_linspaces, component_
 
     return concentration_df
 
+def concentration_from_list_componentwise_grid(component_names, component_concentrations_sublist, component_units, unity_filter = False, component_spacing_type='linear'):
+    """ Given the component names, units and concentrations in parallel will create a concentration dataframe. The concentration values are to formatted where each sublist contains all the information for a single SAMPLE
+    matching the order of component names and units. Each concentration from each component is used in combination with each other component concentration to create a combination of samples. For example component names = [comp1, comp2, comp3] then concentration_sublists = [[comp1_sample1, comp2_sample1, comp3_sample1], [comp1_sample2, comp2_sample2, comp3_sample2]]
+    """
+
+    conc_range_list = [] 
+    for conc_space in component_concentrations_sublist:
+        conc_range_list.append(conc_space)
+    conc_grid = np.meshgrid(*conc_range_list)
+
+    component_conc_dict = {} 
+    for i in range(len(conc_grid)): 
+        component_name = component_names[i]
+        component_unit = component_units[i]
+        component_values = conc_grid[i].ravel()
+        component_conc_dict[component_name + " " + 'concentration' + " " + component_unit] = conc_grid[i].ravel()
+    concentration_df = pd.DataFrame.from_dict(component_conc_dict)
+
+    if unity_filter == True:
+        unity_filter_df(concentration_df, component_names, component_units)
+
+    return concentration_df
+
 def concentration_from_list_samplewise(component_names, concentration_sublists, component_units):
     """ Given the component names, units and concentrations in parallel will create a concentration dataframe. The concentration values are to formatted where each sublist contains all the information for a single SAMPLE
     matching the order of component names and units. For example component names = [comp1, comp2, comp3] then concentration_sublists = [[comp1_sample1, comp2_sample1, comp3_sample1], [comp1_sample2, comp2_sample2, comp3_sample2]]
