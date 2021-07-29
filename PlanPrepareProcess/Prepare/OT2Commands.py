@@ -185,7 +185,7 @@ def create_sample_making_directions(volume_df, stock_position_info, loaded_labwa
             stock_name = column_name
             single_sample_dict[stock_name] = {}
             single_stock_direction_entry = single_sample_dict[stock_name]
-            stock_volume_to_pull = single_sample_stock_volumes[stock_name]
+            stock_volume_to_pull = float(single_sample_stock_volumes[stock_name])
             stock_position = find_stock_to_pull(stock_name, well_index, stock_position_info)
 
             single_stock_direction_entry['Stock Position'] = stock_position
@@ -530,7 +530,7 @@ def labware_check_enough_volume(volumes_df, loaded_labware_dict):
     well_volume = float(destination_wells[0].max_volume)
     total_sample_volumes = volumes_df.sum(axis=1)
 
-    assert (total_sample_volumes < well_volume).all(), 'Sample volumes are exceeding max destination well volume of ' + str(well_volume) + 'uL'
+    assert (total_sample_volumes <= well_volume).all(), 'Sample volumes are exceeding max destination well volume of ' + str(well_volume) + 'uL'
 
 
 # def determine_well_volume(well):
