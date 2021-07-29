@@ -384,6 +384,19 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, de
                     pass
                 elif pipette.has_tip == False:
                     pipette.pick_up_tip(tiprack[i])
+                if 'mix_before' in kwargs.keys():
+                    vol_to_mix = kwargs['mix_before'][1]
+                    if vol_to_mix > pipette.max_volume:
+                        kwargs['mix_before'] = (kwargs['mix_before'][0], pipette.max_volume)
+                    else:
+                        pass
+                if 'mix_after' in kwargs.keys():
+                    vol_to_mix = kwargs['mix_after'][1]
+                    if vol_to_mix > pipette.max_volume:
+                        kwargs['mix_after'] = (kwargs['mix_after'][0], pipette.max_volume)
+                    else:
+                        pass
+
                 pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', **kwargs)
                 protocol.delay(seconds=delay_after)
                 pipette.blow_out()
@@ -401,6 +414,19 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, de
                     pass
                 elif pipette.has_tip == False:
                     pipette.pick_up_tip(tiprack[i])
+
+                if 'mix_before' in kwargs.keys():
+                    vol_to_mix = kwargs['mix_before'][1]
+                    if vol_to_mix > pipette.max_volume:
+                        kwargs['mix_before'] = (kwargs['mix_before'][0], pipette.max_volume)
+                    else:
+                        pass
+                if 'mix_after' in kwargs.keys():
+                    vol_to_mix = kwargs['mix_after'][1]
+                    if vol_to_mix > pipette.max_volume:
+                        kwargs['mix_after'] = (kwargs['mix_after'][0], pipette.max_volume)
+                    else:
+                        pass
                 pipette.transfer(stock_volume_to_pull, stock_position_to_pull, destination_well, new_tip='never', **kwargs) # it might be wise to switch to pipette.aspirate and pipette.dispense, give more control and more modular
                 protocol.delay(seconds=delay_after)
                 ## Consider adding 'blow_out' as argument of the funciton instead of hardcoding it
