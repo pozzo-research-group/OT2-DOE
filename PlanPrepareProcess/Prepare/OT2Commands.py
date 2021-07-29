@@ -3,6 +3,7 @@ import os
 import json
 import opentrons.simulate as simulate
 import pandas as pd
+import time
 
 # All logic is based on api 2.2+ from opentrons, please read: https://docs.opentrons.com/OpentronsPythonAPIV2.pdf
 # Keep in mind the following: All row based (while OT2 'default' is column based), all sequential (i.e sample 100 will be sample 4 in 96 well plate 2 of 2.) and many arugments are hardcoded to pull from a csv templete (hesistate to change template csv, can add but try not take away).
@@ -285,10 +286,12 @@ def execute_cleaning_protocol(loaded_labware_dict, pipette, protocol):
         pipette.mix(cleaning_mix_n, pipette.max_volume, cleaning_well)
         pipette.blow_out(cleaning_well)
         protocol.delay(cleaning_delay)
+    pipette.blow_out(protocol.fixed_trash['A1'])
 
 
 def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict, reuse_tips = True, clean_tips = False, after_delay_sec = 0, **kwargs):  # need to add kwargs for the transfer function
     protocol.home()
+    start = time.time()
 
     small_pipette = loaded_labware_dict['Small Pipette']
     small_tiprack = loaded_labware_dict['Small Tiprack']
@@ -338,8 +341,15 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict, reuse
     for line in protocol.commands():
         print(line)
 
+    ### Keeping track of execution time. Will print total run time in minutes
+    end = time.time()
+    time_consumed = end-start
+    print("This protocol took {} minutes to execute".format(np.round(time/60, 3)))
+
 def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, delay_after=0, **kwargs): # need to add kwargs for the transfer function
     protocol.home()
+    start = time.time()
+
     small_pipette = loaded_labware_dict['Small Pipette']
     small_tiprack = loaded_labware_dict['Small Tiprack']
     large_pipette = loaded_labware_dict['Large Pipette']
@@ -407,6 +417,10 @@ def pipette_volumes_component_wise(protocol, directions, loaded_labware_dict, de
     for line in protocol.commands():
         print(line)
 
+    ### Keeping track of execution time. Will print total run time in minutes
+    end = time.time()
+    time_consumed = end-start
+    print("This protocol took {} minutes to execute".format(np.round(time/60, 3)))
 
 def transfer_from_destination_to_final(protocol, loaded_labware_dict, experiment_dict, number_of_samples):
     """This function will take the already loaded dictionary and load more labware, specfically made for a final transfer from the destination sample plates to another plate.
