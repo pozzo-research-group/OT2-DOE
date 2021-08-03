@@ -35,6 +35,28 @@ def standardize_training(data_list):
     
     return data_scaled, scaler
 
+def reverse_standardization(inverse_scaler, array):
+    rev = inverse_scaler.inverse_transform(array)
+    return rev
+    
+def coupled_two_arrays(data_array1, data_array2):
+    coupled = np.asarray([data_array1[:,0], data_array2[:,0]]).T
+    return coupled
+
+def create_mesh_from_min_max(data_array1, data_array2, scale=1):
+    " Used to create the bounds of the mesh!"
+    data1_min = min(data_array1) + min(data_array1)*scale
+    data1_max = max(data_array1) + max(data_array1)*scale
+    data2_min = min(data_array2) + min(data_array2)*scale
+    data2_max = max(data_array2) + max(data_array2)*scale
+    
+    
+    data1_test = np.linspace(data1_min,data1_max,100)
+    data2_test = np.linspace(data2_min,data2_max,100)
+    data12_mesh_test = create_product_mesh(data1_test, data2_test)
+    
+    return data12_mesh_test, data1_test, data2_test
+
 def create_product_mesh(x1,x2):
     x1x2 = np.array(list(product(x1, x2)))
     x1_expanded = x1x2[:,0][:,0]
