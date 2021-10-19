@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np
 import time
 
+from Plan.CreateSamples import isolate_common_column
+
 # All logic is based on api 2.2+ from opentrons, please read:
 # https://docs.opentrons.com/OpentronsPythonAPIV2.pdf
 # Keep in mind the following:
@@ -25,11 +27,13 @@ def custom_labware_dict(labware_dir_path):
 
     Parameters
     -----------
+
     labware_dir_path : str
         Path to the folder containing the labware .json files.
 
     Returns
     --------
+
     labware_dict: dict
         Dictionary contianing infomration about the labware calibration.
         There include: size, # of wells, well size, height, etc.
@@ -57,6 +61,7 @@ def object_to_object_list(protocol, stock_object_names, stock_object_slots):
 
     Parameters
     -----------
+
     protocol: opentrons.protocol_api.protocol_context.ProtocolContext
         Protocol object from the robot
     stock_object_names: List
@@ -67,6 +72,7 @@ def object_to_object_list(protocol, stock_object_names, stock_object_slots):
 
     Returns
     --------
+
     labware_objects : List
         List containing all the labware objects
             [opentrons.protocol_api.labware.Labware]
@@ -92,6 +98,7 @@ def object_list_to_well_list(labware_objects, well_order='row'):
 
     Parameters
     -----------
+
     labware_objects : List
         List containing all the labware objects
             [opentrons.protocol_api.labware.Labware]
@@ -101,6 +108,7 @@ def object_list_to_well_list(labware_objects, well_order='row'):
 
     Returns
     --------
+
     all_wells_order : List
         List containing all the well information (well name, labware name, and
         deck position) for each labware found in the labware object list.
@@ -130,6 +138,7 @@ def loading_labware(protocol, experiment_dict,
 
     Parameters
     -----------
+
     protocol: opentrons.protocol_api.protocol_context.ProtocolContext
         Protocol object from the robot
     experiment_dict: Dict
@@ -143,6 +152,7 @@ def loading_labware(protocol, experiment_dict,
 
     Returns
     --------
+
     loaded_dict : Dict
         Dictionary containg all labware, pipette, tipracks and protocol
         information
@@ -231,6 +241,36 @@ def add_labware_to_dict(loaded_dict, labware_key,
                         labware_names_list, labware_slots_list,
                         well_order='row'):
     """
+    Function used to load a new labware and determine its specifications, such
+    as deck position, labware name and well names. Once the labware it is
+    loaded, the well order will be defined. The final labware form will be
+    added to the experimental protocol.
+
+    Parameters
+    -----------
+
+    loaded_dict: dict
+        Dictionary containing all the exeprimental details relevent to the
+        sample design space (optional), labware specs, deck slots, pipettes
+        pipette tip.
+    labware_key: str
+        Strin indicating the key of the labware
+    labware_names_list: list
+        List of sample labware to use as destination wells.
+    labware_slots_list: list
+        List of deck slots to use for each labware. Note that the lenght of the
+        labware_slots_list needs to be the same as the labware_names_list.
+    well_order: 'row' or 'column'
+        String indicating the order in which the wells will be accessed by
+        the robot
+
+    Returns
+    --------
+
+    loaded_dict : Dict
+        Dictionary containg all labware, pipette, tipracks and protocol
+        information and the new labware
+
     """
     protocol = loaded_dict['Protocol']
     labware_objects = object_to_object_list(
@@ -242,15 +282,36 @@ def add_labware_to_dict(loaded_dict, labware_key,
 
 def stock_well_ranges(volume_df, stock_labware_wells, volume_buffer_pct=10):
     """
-    Given a dataframe of stocks volumes to pipette, will return the ranges of
-    indexes for the volumes seperated in such a way to satisfy the volume
-    limitation of current stock labware. Ranges of the indexes are provide in a
-    2D list with each entry consisting of a lower and a upper_well_index index.
-    A stock is identified by having the term stock or Stock in its df column.
+    Given a dataframe of stocks volumes to be pipetted, it will return the
+    ranges of sample indexes for the volumes seperated in such a way to satisfy
+    the volume limitation of current stock labware.
+    Ranges of the indexes are provide in a 2D list with each entry consisting
+    of a lower and a upper_well_index index. A stock is identified by having
+    the term stock or Stock in its column name.
     Note: dataframe/series indexing is a little different than list indexing.
+
+    Parameters
+    -----------
+
+    volume_df: pd.DataFrame
+        Dataframe containing all the species volumes composing each sample.
+    stock_labware_wells: str
+        String identifying the well name (i.e A1), the labware name and the
+        dock slot position
+    volume_buffer_pct: int
+        Percentage of volume to use as buffer. This will be use to ensure that
+        the robot will have enough volume to pipette out of the stock source.
+
+    Returns
+    --------
+
+    stock_volume_to_pull: dict
+        Dictionary cotaining information about the stocks and sample index
+        details for each of them. The key of the dictionary are the stock
+        names.
+
     """
 
-    # will only require protocol if you want to call the
     volume_df = pd.DataFrame(volume_df)
     limit = float(stock_labware_wells[0].max_volume)*(
         100-volume_buffer_pct)/100
@@ -292,6 +353,20 @@ def stock_well_ranges(volume_df, stock_labware_wells, volume_buffer_pct=10):
 def create_sample_making_directions(volume_df, stock_position_info,
                                     loaded_labware_dict, start_position=0):
     """
+    Function to generate the direction for each sample. This will include total
+    volume to be dispensed for each of the stock composing the sample. It will
+    also indicate the soruce well for each stock and the sample destination
+    well.
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
+
+
+
     """
 
     if not isinstance(volume_df, pd.DataFrame):
@@ -335,10 +410,23 @@ def create_sample_making_directions(volume_df, stock_position_info,
 def determine_pipette_tiprack(volume, small_pipette, large_pipette,
                               small_tiprack=None, large_tiprack=None):
     """
+
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     if small_pipette.min_volume <= volume <= small_pipette.max_volume or \
        volume == 0:
+        pipette = small_pipette
+        if small_tiprack:
+            tiprack = small_tiprack
+            return pipette, tiprack
+    elif small_pipette.max_volume <= volume <= large_pipette.min_volume:
         pipette = small_pipette
         if small_tiprack:
             tiprack = small_tiprack
@@ -361,6 +449,12 @@ def determine_pipette_resolution(loaded_labware_dict):
     We designate one as small and one as large to ensure we are using the
     highest precision possible
 
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     left_pipette = loaded_labware_dict['Left Pipette']
@@ -388,8 +482,67 @@ def determine_pipette_resolution(loaded_labware_dict):
     return loaded_labware_dict
 
 
+def get_pipette_tip_count(small_pipette, large_pipette, volume_df):
+    """
+    This function will display the number of pipette tips required to run
+    the experiment. This function will assume that a new pipette will be
+    used to dispense each component for each sample. This could be the case
+    if a mixing step is added in the protocol.
+    Assessing this tip count, will aloow you to better design the OT2 deck
+    layout and ensure that you can make all the planned samples in a single
+    run.
+
+    Parameters
+    -----------
+    small pipette: int
+        Integer representing the maximum volume of the smallest pipette
+    large pipette: int
+        Integer representing the maximum volume of the largest pipette
+    volume_df: pd.DataFrame
+        Dataframe containing the volumes of each stock for all the samples
+
+    Returns
+    --------
+    The fuinction will return print statements eith the total number of
+    tips and tipracks required for each pipette.
+    """
+    small_tips = ((volume_df < small_pipette) & (volume_df != 0)).sum().sum()
+    small_racks = np.round(small_tips/96, 1)
+    print(" \033[1mSmall\033[0m pipette tips: \033[1m{}\033[0m".format(
+        small_tips))
+    print(" \033[1mSmall\033[0m tipracks: \033[1m{}\033[0m".format(
+        small_racks))
+
+    large_tips = ((volume_df > small_pipette)).sum().sum()
+    large_racks = np.round(large_tips/96, 2)
+    print(" \033[1mLarge\033[0m pipette tips: \033[1m{}\033[0m".format(
+        large_tips))
+    print(" \033[1mLarge\033[0m tipracks: \033[1m{}\033[0m".format(
+        large_racks))
+
+
+def calculate_total_volumes(volume_df):
+    """
+    Parameters
+    -----------
+
+
+    Returns
+    --------
+    """
+
+    total_volumes = isolate_common_column(volume_df, 'stock').sum(axis=0)/1000
+    return total_volumes
+
+
 def find_stock_to_pull(stock_name, well_index, stocks_position_dict):
     """
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     stock_position_info = stocks_position_dict[stock_name]
@@ -408,6 +561,13 @@ def cleaning_tip_protocol(loaded_dict, cleaning_cycles=1):
     """
     Assumes cleaning labware has already been loaded into loaded_dict with
     the Key of 'Cleaning Labware'
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     cleaning_wells = loaded_dict['Cleaning Wells']
@@ -431,7 +591,14 @@ def cleaning_tip_protocol(loaded_dict, cleaning_cycles=1):
 
 
 def execute_cleaning_protocol(loaded_labware_dict, pipette, protocol):
+    """
+    Parameters
+    -----------
 
+
+    Returns
+    --------
+    """
     cleaning_protocol = loaded_labware_dict['Cleaning Protocol']
     for key, cleaning_n_protocol in cleaning_protocol.items():
         cleaning_well = cleaning_n_protocol['well']
@@ -448,6 +615,12 @@ def pipette_volumes_sample_wise(protocol, directions, loaded_labware_dict,
                                 reuse_tips=True, clean_tips=False,
                                 after_delay_sec=0, **kwargs):
     """
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     protocol.home()
@@ -536,6 +709,12 @@ def pipette_volumes_component_wise(
         protocol, directions, loaded_labware_dict, delay_after=0,
         cleaning=False, **kwargs):
     """
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
     protocol.home()
     start = time.time()
@@ -568,7 +747,8 @@ def pipette_volumes_component_wise(
             if stock_volume_to_pull == 0:
                 pass
             elif small_pipette.min_volume <= stock_volume_to_pull <= \
-                    small_pipette.max_volume:
+                    small_pipette.max_volume or small_pipette.max_volume <= \
+                    stock_volume_to_pull <= large_pipette.min_volume:
 
                 if pipette == large_pipette and pipette.has_tip is True:
                     # Returning tip if other pipette has tip
@@ -603,7 +783,6 @@ def pipette_volumes_component_wise(
                     protocol.delay(seconds=delay_after)
                 else:
                     pass
-                pipette.blow_out()
 
                 if cleaning:
                     execute_cleaning_protocol(
@@ -643,7 +822,7 @@ def pipette_volumes_component_wise(
                     protocol.delay(seconds=delay_after)
                 else:
                     pass
-                pipette.blow_out()
+
                 if cleaning:
                     execute_cleaning_protocol(
                         loaded_labware_dict, pipette, protocol)
@@ -654,6 +833,7 @@ def pipette_volumes_component_wise(
             small_pipette.drop_tip()
         if large_pipette.has_tip is True:
             large_pipette.drop_tip()
+
     for line in protocol.commands():
         print(line)
 
@@ -679,6 +859,13 @@ def transfer_from_destination_to_final(protocol, loaded_labware_dict,
     their final transfer labware all on the deck at the same time could pose
     a constraint, however unlikely as typically you will be transfering into
     a smaller vessel with more wells than the original synthesis vessel.
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     dest_wells = loaded_labware_dict['Destination Wells']
@@ -734,6 +921,13 @@ def rearrange_2D_list(nth_list):
    [[a1,b1,c1],[a2,b2,c2]] => [[a1,a2],[b1,b2],[c1,c2]],
     making it easier to handle for cases like dataframes.
 
+    Parameters
+    -----------
+
+
+    Returns
+    --------
+
     """
     list_rearranged = []
     for i in range(len(nth_list[0])):
@@ -752,6 +946,13 @@ def pipette_check(volume_df, pipette_1, pipette_2):
     """
     Given volumes along with two pipettes in use, will ensure the volumes of
     the pipette ranges are able to be cover the volumes
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     volume_df = isolate_common_column(volume_df, 'stock')
@@ -773,6 +974,13 @@ def labware_check_enough_wells(volumes, loaded_labware_dict):
     volume and if enough wells are available.
     Volumes to be in dataframe.
     Assumes all of destination labware are the same.
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     destination_wells = loaded_labware_dict['Destination Wells']
@@ -788,6 +996,13 @@ def labware_check_enough_volume(volumes_df, loaded_labware_dict):
     volume and if enough wells are available.
     Volumes to be in dataframe.
     Assumes all of destination labware are the same.
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
 
     destination_wells = loaded_labware_dict['Destination Wells']
@@ -819,6 +1034,12 @@ def labware_check_enough_volume(volumes_df, loaded_labware_dict):
 
 def isolate_common_column(df, common_string):
     """
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
     cols = df.columns
     common_string_cols = [col for col in cols if common_string in col]
@@ -830,6 +1051,12 @@ def isolate_common_column(df, common_string):
 
 def range_gap(small_pipette, pipette_2):
     """
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
     if p1_max >= p2_min:
         print('Pipette range complete')
@@ -844,6 +1071,13 @@ def find_max_dest_volume_labware(experiment_csv_dict,
     Using the stock labware name from the csv, loads the appropiate labware
     from both a custom and the native libary and determines the maximum volume
     for one stock labware well. Assumes all labware is all identical.
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
     # Protocol encapsulated as only need an instance to simualte and toss
     if custom_labware_dict:
@@ -866,6 +1100,13 @@ def find_max_stock_volume_labware(experiment_csv_dict,
     Using the stock labware name from the csv, loads the appropiate labware
     from both a custom and the native libary and determines the maximum volume
     for one stock labware well. Assumes all labware is all identical.
+
+    Parameters
+    -----------
+
+
+    Returns
+    --------
     """
     # Protocol encapsulated as only need an instance to simualte and toss
     if custom_labware_dict:
