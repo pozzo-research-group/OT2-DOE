@@ -1,7 +1,7 @@
 # OT2-DOE
 A group of python modules and notebooks made for high throughput measurement and analysis of samples made through a liquid handling robot (Opentrons or OT2). 
 
-    Note: As of 03/25/21 this repo is still being developed with new functions, bugs and documentation updated constantly. 
+    Note: As of 02/01/22 this repo is still being developed with new functions, bugs and documentation updated constantly. 
     Feel free to address issues in the issues tab or edit them yourself so long as you document and justify the change. 
     Currently the framework is still not entirely up and running as testing allows for adaptation for the groups use. 
 
@@ -14,14 +14,18 @@ Here is an example where this framework could be implemented for increased disco
 Automatic handling robots (ALH) are one of many high throughput tools that allow for increases discovery of solution based chemistry. If it can be moved by a human using a pipette a ALH can do the same function faster and more reproducible. Our ALH being used is the Opentrons 2, a low cost ALH which has interchangable pipette modules, custom labware, and is controlled through Python. High throuhgput synthesis and charecterization of these solution based systems requires an organized framework consisting of planning, processing and presentation modules. Under all of this is the whole premise for a framework for a design of experiments. The packages and adjacent notebook start this frame work with the main three packages consisting of **Prepare**, **Process**, and **Present**. Each package can contain multiple modules which are relvant to that specfic process such as a module for a processing plate reader data, or a module revovling around prapring sample volumes. In theory these packages should get you from the point of planning an experiment all the way to modeling and presenting the information. 
 
 ## To get started
-* Install python version 3.0 + 
-* Optional: Install gitbash 
-* Clone the repository on your machine using 'git clone https://github.com/pozzo-research-group/OT2-DOE.git' in your command prompt, Anaconda prompt or gitbash. This will create a copy of this repository on your machine.
-* For now: Open a notebook in the PlanPrepareProcess directory.
-* Future: Install as part of a package
+You can install this package using the GitHub repository in following steps: 
+* In your terminal, run git clone https://github.com/pozzo-research-group/OT2-DOE.git
+* Change the directory to `OT2_DOE` root directory, by running `cd OT2_DOE`
+* (Recommended)- Create an environmetn using the provided `environment.yaml` file. To do so, run the following lines:
+
+	`conda install --name OT2_DOE --file environment.yml`
+	
+	`conda activate OT2_DOE`
+* Install the package by running `python setup.py install` in your terminal
+
 
 ## DOE Package Framework:
-
 
 ### Plan: This package contains is to modules which are related to planning the experimental space such as samples compositions, volumes, stocks info and other information prior to OT2 commands. 
 
