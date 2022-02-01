@@ -1,0 +1,29 @@
+name: OT2-DOE
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - csv
+  - datetime
+  - glob
+  - h5py
+  - imageio
+  - ipython
+  - ipython_genutils
+  - ipywidgets
+  - json
+  - jupyter
+  - matplotlib
+  - nose
+  - notebook
+  - numpy
+  - numpy-base
+  - opentrons
+  - os
+  - pandas
+  - pip
+  - python
+  - scipy
+  - setuptools
+  - sphinx
+  - tabulate
