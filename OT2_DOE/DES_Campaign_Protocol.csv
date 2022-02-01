@@ -1,0 +1,17 @@
+OT2 Destination Labwares,"[""nanosampler_48_wellplate_1650ul"", ""nanosampler_48_wellplate_1650ul"",""nanosampler_48_wellplate_1650ul"",""nanosampler_48_wellplate_1650ul"",""nanosampler_48_wellplate_1650ul""]"
+OT2 Destination Labware Slots,"[""2"",""3"", ""5"",""6"",""9""]"
+OT2 Sample Labware Start,0
+OT2 Stock Labwares,"[""agilent_6_reservoir_47000ul"", ""usascientific_12_reservoir_22ml""]"
+OT2 Stock Labware Slots,"[""1"", ""4""]"
+OT2 Stock Labware Stock Order,"[[1,2],[3,4,5,6,7,8,9,10,11,12]]"
+OT2 Left Pipette,"""p50_single"""
+OT2 Left Pipette Aspiration Rate (uL/sec),100
+OT2 Left Pipette Dispense Rate (uL/sec),300
+OT2 Left Tipracks,"[""opentrons_96_tiprack_300ul"",""opentrons_96_tiprack_300ul""]"
+OT2 Left Tiprack Slots,"[""7"", ""8""]"
+OT2 Right Pipette,"""p1000_single"""
+OT2 Right Pipette Aspiration Rate (uL/sec),150
+OT2 Right Pipette Dispense Rate (uL/sec),400
+OT2 Right Tipracks,"[""opentrons_96_tiprack_1000ul"",""opentrons_96_tiprack_1000ul""]"
+OT2 Right Tiprack Slots,"[""10"",""11""]"
+OT2 Bottom Dispensing Clearance (mm),30

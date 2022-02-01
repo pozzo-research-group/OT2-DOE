@@ -8,11 +8,11 @@
 import setuptools
 
 setuptools.setup(
-    name='OT2-DOE',
+    name='OT2_DOE',
     version='1.0',
     url='https://github.com/pozzo-research-group/OT2-DOE',
     license='MIT',
-    author='Edwin Antonio, Maria Politi'
+    author='Edwin Antonio, Maria Politi',
     description='A group of python modules and notebooks made for' + \
     ' high-throughput measurement and analysis of samples made through' + \
     ' a liquid handling robot (Opentrons OT2) ',
