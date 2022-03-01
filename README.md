@@ -19,7 +19,7 @@ You can install this package using the GitHub repository in following steps:
 * Change the directory to `OT2_DOE` root directory, by running `cd OT2_DOE`
 * (Recommended)- Create an environmetn using the provided `environment.yaml` file. To do so, run the following lines:
 
-	`conda install --name OT2_DOE --file environment.yml`
+	`conda env create --file environment.yml`
 	
 	`conda activate OT2_DOE`
 * Install the package by running `python setup.py install` in your terminal
