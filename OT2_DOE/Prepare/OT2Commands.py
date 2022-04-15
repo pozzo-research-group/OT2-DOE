@@ -54,7 +54,8 @@ def custom_labware_dict(labware_dir_path):
 # The four main things are: source/destination labware, pipettes and tipracks #
 
 
-def object_to_object_list(protocol, stock_object_names, stock_object_slots):
+def object_to_object_list(protocol, stock_object_names, stock_object_slots,
+                          offset=None):
     """
     Loads the labware specfied in the list arguments with the respective slots.
     This labware is tied to the loaded protocol (global).
@@ -79,14 +80,29 @@ def object_to_object_list(protocol, stock_object_names, stock_object_slots):
     """
 
     labware_objects = []  # labware objects
-    for labware_name, labware_slot in zip(
-                                          stock_object_names,
-                                          stock_object_slots):
-        labware_object = protocol.load_labware(labware_name,
-                                               labware_slot)
-        # this is where the well information is being pulled from
-        # a OT2/added native library
-        labware_objects.append(labware_object)
+    if offset:
+        for labware_name, labware_slot, offset_coord in zip(
+                                              stock_object_names,
+                                              stock_object_slots,
+                                              offset):
+            labware_object = protocol.load_labware(labware_name,
+                                                   labware_slot)
+            labware_object.set_offset(x=offset_coord[0],
+                                      y=offset_coord[1],
+                                      z=offset_coord[2])
+            # this is where the well information is being pulled from
+            # a OT2/added native library
+            labware_objects.append(labware_object)
+
+    else:
+        for labware_name, labware_slot in zip(
+                                              stock_object_names,
+                                              stock_object_slots):
+            labware_object = protocol.load_labware(labware_name,
+                                                   labware_slot)
+            # this is where the well information is being pulled from
+            # a OT2/added native library
+            labware_objects.append(labware_object)
 
     return labware_objects
 
@@ -159,33 +175,69 @@ def loading_labware(protocol, experiment_dict,
 
     """
     protocol.home()
+    # Check for labware offset info in protocol file
+    protocol_keys = list(experiment_dict.keys())
 
     # Loading labwares:
     # All concatenated list of wells in order of the provided name/slot
 
+################ Destination Labware ######################
     dest_labware_names = experiment_dict['OT2 Destination Labwares']
     dest_labware_slots = experiment_dict['OT2 Destination Labware Slots']
-    dest_labware_objects = object_to_object_list(
-        protocol, dest_labware_names, dest_labware_slots)
+
+    if 'OT2 Destination Labwares Offset' in protocol_keys:
+        dest_labware_offset =\
+            experiment_dict['OT2 Destination Labwares Offset']
+        dest_labware_objects = object_to_object_list(
+            protocol, dest_labware_names, dest_labware_slots,
+            offset=dest_labware_offset)
+    else:
+        dest_labware_objects = object_to_object_list(
+            protocol, dest_labware_names, dest_labware_slots)
+
     dest_wells = object_list_to_well_list(
         dest_labware_objects, well_order=well_order)
 
+################ Stock Labware ######################
     stock_labware_names = experiment_dict['OT2 Stock Labwares']
     stock_labware_slots = experiment_dict['OT2 Stock Labware Slots']
-    stock_labware_objects = object_to_object_list(
-        protocol, stock_labware_names, stock_labware_slots)
+
+    if 'OT2 Stock Labwares Offset' in protocol_keys:
+        stock_labware_offset =\
+            experiment_dict['OT2 Stock Labwares Offset']
+
+        stock_labware_objects = object_to_object_list(
+            protocol, stock_labware_names, stock_labware_slots,
+            offset=stock_labware_offset)
+
+    else:
+        stock_labware_objects = object_to_object_list(
+            protocol, stock_labware_names, stock_labware_slots)
+
     stock_wells = object_list_to_well_list(
         stock_labware_objects, well_order=well_order)
 
-    # Loading pipettes and tipracks
+################ Pipettes & Tipracks ######################
 
     right_tiprack_names = experiment_dict['OT2 Right Tipracks']
     right_tiprack_slots = experiment_dict['OT2 Right Tiprack Slots']
-    right_tipracks = object_to_object_list(
-        protocol, right_tiprack_names, right_tiprack_slots)
+
+    if 'OT2 Right Tipracks Offset' in protocol_keys:
+        right_tiprack_offset =\
+            experiment_dict['OT2 Right Tipracks Offset']
+
+        right_tipracks = object_to_object_list(
+            protocol, right_tiprack_names, right_tiprack_slots,
+            offset= right_tiprack_offset)
+
+    else:
+        right_tipracks = object_to_object_list(
+            protocol, right_tiprack_names, right_tiprack_slots)
+
     right_tiprack_wells = object_list_to_well_list(
         right_tipracks, well_order=well_order)
 
+    #### Right Pipette ####
     right_pipette = protocol.load_instrument(
         experiment_dict['OT2 Right Pipette'],
         'right', tip_racks=right_tipracks)
@@ -198,8 +250,17 @@ def loading_labware(protocol, experiment_dict,
 
     left_tiprack_names = experiment_dict['OT2 Left Tipracks']
     left_tiprack_slots = experiment_dict['OT2 Left Tiprack Slots']
-    left_tipracks = object_to_object_list(
-        protocol, left_tiprack_names, left_tiprack_slots)
+
+    if 'OT2 Left Tipracks Offset' in protocol_keys:
+        left_tiprack_offset =\
+            experiment_dict['OT2 Left Tipracks Offset']
+        left_tipracks = object_to_object_list(
+            protocol, left_tiprack_names, left_tiprack_slots,
+            offset= left_tiprack_offset)
+    else:
+        left_tipracks = object_to_object_list(
+            protocol, left_tiprack_names, left_tiprack_slots)
+
     left_tiprack_wells = object_list_to_well_list(
         left_tipracks, well_order=well_order)
 
