@@ -185,9 +185,9 @@ def loading_labware(protocol, experiment_dict,
     dest_labware_names = experiment_dict['OT2 Destination Labwares']
     dest_labware_slots = experiment_dict['OT2 Destination Labware Slots']
 
-    if 'OT2 Destination Labwares Offset' in protocol_keys:
+    if 'OT2 Destination Labware Offset' in protocol_keys:
         dest_labware_offset =\
-            experiment_dict['OT2 Destination Labwares Offset']
+            experiment_dict['OT2 Destination Labware Offset']
         dest_labware_objects = object_to_object_list(
             protocol, dest_labware_names, dest_labware_slots,
             offset=dest_labware_offset)
@@ -202,9 +202,9 @@ def loading_labware(protocol, experiment_dict,
     stock_labware_names = experiment_dict['OT2 Stock Labwares']
     stock_labware_slots = experiment_dict['OT2 Stock Labware Slots']
 
-    if 'OT2 Stock Labwares Offset' in protocol_keys:
+    if 'OT2 Stock Labware Offset' in protocol_keys:
         stock_labware_offset =\
-            experiment_dict['OT2 Stock Labwares Offset']
+            experiment_dict['OT2 Stock Labware Offset']
 
         stock_labware_objects = object_to_object_list(
             protocol, stock_labware_names, stock_labware_slots,
@@ -224,7 +224,7 @@ def loading_labware(protocol, experiment_dict,
 
     if 'OT2 Right Tipracks Offset' in protocol_keys:
         right_tiprack_offset =\
-            experiment_dict['OT2 Right Tipracks Offset']
+            experiment_dict['OT2 Right Tiprack Offset']
 
         right_tipracks = object_to_object_list(
             protocol, right_tiprack_names, right_tiprack_slots,
@@ -251,9 +251,9 @@ def loading_labware(protocol, experiment_dict,
     left_tiprack_names = experiment_dict['OT2 Left Tipracks']
     left_tiprack_slots = experiment_dict['OT2 Left Tiprack Slots']
 
-    if 'OT2 Left Tipracks Offset' in protocol_keys:
+    if 'OT2 Left Tiprack Offset' in protocol_keys:
         left_tiprack_offset =\
-            experiment_dict['OT2 Left Tipracks Offset']
+            experiment_dict['OT2 Left Tiprack Offset']
         left_tipracks = object_to_object_list(
             protocol, left_tiprack_names, left_tiprack_slots,
             offset= left_tiprack_offset)
