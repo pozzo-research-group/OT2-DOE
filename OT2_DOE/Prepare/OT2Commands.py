@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import time
 
-from OT2_DOE.Plan.CreateSamples import isolate_common_column
+from Plan.CreateSamples import isolate_common_column
 
 # All logic is based on api 2.2+ from opentrons, please read:
 # https://docs.opentrons.com/OpentronsPythonAPIV2.pdf
