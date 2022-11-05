@@ -1,0 +1,25 @@
+Sample Amount,0.3
+Sample Unit,"""mL"""
+Component Shorthand Names,"['HEPES' , 'Z2M246I', 'HAuCl4']"
+Component Concentration Units,"['molarity', 'molarity', 'molarity']"
+Component Concentration List,"[[0.001],[4.00000000e-05, 8.94427191e-05, 2.00000000e-04, 0.00000000e+00],[4.00000000e-05, 6.83990379e-05, 1.16960710e-04, 2.00000000e-04]]"
+Stock Names,"['HEPES-water-stock', 'Z2M246I-water-stock','HAuCl4-water-stock' ]"
+Stock Concentration Units,"['molarity','molarity', 'molarity']"
+Stock Concentrations,"[0.004183780862202961, 0.0005383369330453564, 0.002934165219694517]"
+OT2 Destination Labwares,"[""corning_96_wellplate_360ul_flat""]"
+OT2 Destination Labware Slots,"[""2""]"
+OT2 Sample Labware Start,0
+OT2 Stock Labwares,"[""20mlscintillationsmall_12_wellplate_18000ul""]"
+OT2 Stock Labware Slots,"[""1""]"
+OT2 Stock Labware Stock Order,"[1,2,3,4]"
+OT2 Left Pipette,"""p300_single_gen2"""
+OT2 Left Pipette Aspiration Rate (uL/sec),50
+OT2 Left Pipette Dispense Rate (uL/sec),300
+OT2 Left Tipracks,"[""opentrons_96_tiprack_300ul"",""opentrons_96_tiprack_300ul"",""opentrons_96_tiprack_300ul"",""opentrons_96_tiprack_300ul""]"
+OT2 Left Tiprack Slots,"[""10"",""7"", ""4"", ""5""]"
+OT2 Right Pipette,"""p20_single_gen2"""
+OT2 Right Pipette Aspiration Rate (uL/sec),50
+OT2 Right Pipette Dispense Rate (uL/sec),50
+OT2 Right Tipracks,"[""opentrons_96_tiprack_20ul"",""opentrons_96_tiprack_20ul""]"
+OT2 Right Tiprack Slots,"[""11"",""9""]"
+OT2 Bottom Dispensing Clearance (mm),30
