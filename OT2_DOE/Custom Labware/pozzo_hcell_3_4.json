@@ -1,0 +1,95 @@
+{
+    "ordering": [
+        [
+            "A1",
+            "B1"
+        ],
+        [
+            "A2",
+            "B2"
+        ]
+    ],
+    "brand": {
+        "brand": "Pozzo",
+        "brandId": [
+            "H_Cell_3_4"
+        ]
+    },
+    "metadata": {
+        "displayName": "pozzo_hcell_3_4",
+        "displayCategory": "wellPlate",
+        "displayVolumeUnits": "µL",
+        "tags": []
+    },
+    "dimensions": {
+        "xDimension": 127.17,
+        "yDimension": 85.64,
+        "zDimension": 138.18
+    },
+    "wells": {
+        "A1": {
+            "depth": 82.5,
+            "totalLiquidVolume": 11000,
+            "shape": "circular",
+            "diameter": 8.31,
+            "x": 31,
+            "y": 69.29,
+            "z": 55.68
+        },
+        "B1": {
+            "depth": 82.5,
+            "totalLiquidVolume": 11000,
+            "shape": "circular",
+            "diameter": 8.31,
+            "x": 31,
+            "y": 20.79,
+            "z": 55.68
+        },
+        "A2": {
+            "depth": 82.5,
+            "totalLiquidVolume": 11000,
+            "shape": "circular",
+            "diameter": 8.31,
+            "x": 95,
+            "y": 69.29,
+            "z": 55.68
+        },
+        "B2": {
+            "depth": 82.5,
+            "totalLiquidVolume": 11000,
+            "shape": "circular",
+            "diameter": 8.31,
+            "x": 95,
+            "y": 20.79,
+            "z": 55.68
+        }
+    },
+    "groups": [
+        {
+            "metadata": {
+                "wellBottomShape": "flat"
+            },
+            "wells": [
+                "A1",
+                "B1",
+                "A2",
+                "B2"
+            ]
+        }
+    ],
+    "parameters": {
+        "format": "irregular",
+        "quirks": [],
+        "isTiprack": false,
+        "isMagneticModuleCompatible": false,
+        "loadName": "pozzo_hcell_3_4"
+    },
+    "namespace": "custom_beta",
+    "version": 1,
+    "schemaVersion": 2,
+    "cornerOffsetFromSlot": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}
