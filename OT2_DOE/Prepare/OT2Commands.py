@@ -13,11 +13,10 @@ from Plan.CreateSamples import isolate_common_column
 # Keep in mind the following:
 # - All row based (while OT2 'default' is column based),
 # - All sequential (i.e sample 100 will be sample 4 in 96 well plate 2 of 2.)
-# - Arugments are at times hardcoded to pull from a csv template
 # - Arguments are at times hardcoded to pull from a csv template
-#  (hesistate to change template csv, can add but try not take away).
 #  (hesitate to change template csv, can add but try not take away).
 
+# Load in custom labware dictionary if necessary #
 
 
 def custom_labware_dict(labware_dir_path):
@@ -159,6 +158,7 @@ def loading_labware(protocol, experiment_dict,
     protocol: opentrons.protocol_api.protocol_context.ProtocolContext
         Protocol object from the robot
     experiment_dict: Dict
+        Dictionary containing all the experimental parameters
     well_order: 'row' or 'column'
         String indicating the order in which the wells will be accessed by
         the robot
@@ -222,6 +222,7 @@ def loading_labware(protocol, experiment_dict,
     right_tiprack_names = experiment_dict['OT2 Right Tipracks']
     right_tiprack_slots = experiment_dict['OT2 Right Tiprack Slots']
 
+    if 'OT2 Right Tiprack Offset' in protocol_keys:
         right_tiprack_offset =\
             experiment_dict['OT2 Right Tiprack Offset']
 
@@ -373,6 +374,7 @@ def stock_well_ranges(volume_df, stock_labware_wells, volume_buffer_pct=10):
     """
 
     volume_df = pd.DataFrame(volume_df)
+    limit = float(stock_labware_wells[0].max_volume)*(100-volume_buffer_pct)/100
     col_names = [name for name in volume_df.columns if "stock" in name]
     stock_info_to_pull = {}
 
@@ -1137,6 +1139,7 @@ def find_max_dest_volume_labware(experiment_csv_dict,
     Returns
     --------
     """
+    # Protocol encapsulated as only need an instance to simulate and toss
     if custom_labware_dict:
         protocol = simulate.get_protocol_api('2.8',
                                              extra_labware=custom_labware_dict)
@@ -1154,6 +1157,7 @@ def find_max_dest_volume_labware(experiment_csv_dict,
 def find_max_stock_volume_labware(experiment_csv_dict,
                                   custom_labware_dict=None):
     """
+    Using the stock labware name from the csv, loads the appropriate labware
     from both a custom and the native libary and determines the maximum volume
     for one stock labware well. Assumes all labware is all identical.
 
@@ -1164,6 +1168,7 @@ def find_max_stock_volume_labware(experiment_csv_dict,
     Returns
     --------
     """
+    # Protocol encapsulated as only need an instance to simulate and toss
     if custom_labware_dict:
         protocol = simulate.get_protocol_api('2.8',
                                              extra_labware=custom_labware_dict)
