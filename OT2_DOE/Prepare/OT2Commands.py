@@ -16,6 +16,7 @@ from Plan.CreateSamples import isolate_common_column
 # - Arugments are at times hardcoded to pull from a csv template
 # - Arguments are at times hardcoded to pull from a csv template
 #  (hesistate to change template csv, can add but try not take away).
+#  (hesitate to change template csv, can add but try not take away).
 
 
 
