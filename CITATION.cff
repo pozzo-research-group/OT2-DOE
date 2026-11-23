@@ -3,7 +3,17 @@ message: "If you use this software, please cite the paper(s) listed under refere
 title: "OT2-DOE"
 type: software
 authors:
-  - name: "Pozzo Research Group, University of Washington"
+  - family-names: "Antonio"
+    given-names: "Edwin"
+  - family-names: "Politi"
+    given-names: "Maria"
+    orcid: "https://orcid.org/0000-0002-5815-3371"
+  - family-names: "Lachowski"
+    given-names: "Kacper J."
+    orcid: "https://orcid.org/0000-0002-7598-285X"
+  - family-names: "Pozzo"
+    given-names: "Lilo D."
+    orcid: "https://orcid.org/0000-0001-7104-9061"
 repository-code: "https://github.com/pozzo-research-group/OT2-DOE"
 url: "https://pozzorg.com"
 references:
