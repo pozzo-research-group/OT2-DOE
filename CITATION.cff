@@ -1,0 +1,53 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper(s) listed under references that used it."
+title: "OT2-DOE"
+type: software
+authors:
+  - name: "Pozzo Research Group, University of Washington"
+repository-code: "https://github.com/pozzo-research-group/OT2-DOE"
+url: "https://pozzorg.com"
+references:
+  - type: article
+    title: "Autonomous retrosynthesis of gold nanoparticles via spectral shape matching"
+    authors:
+      - family-names: "Vaddi"
+        given-names: "Kiran"
+      - family-names: "Chiang"
+        given-names: "Huat Thart"
+      - family-names: "Pozzo"
+        given-names: "Lilo D."
+    journal: "Digital Discovery"
+    year: 2022
+    volume: "1"
+    issue: "4"
+    start: "502"
+    end: "510"
+    doi: "10.1039/d2dd00025c"
+  - type: article
+    title: "A high-throughput workflow for the synthesis of CdSe nanocrystals using a sonochemical materials acceleration platform"
+    authors:
+      - family-names: "Politi"
+        given-names: "Maria"
+      - family-names: "Baum"
+        given-names: "Fabio"
+      - family-names: "Vaddi"
+        given-names: "Kiran"
+      - family-names: "Antonio"
+        given-names: "Edwin"
+      - family-names: "Vasquez"
+        given-names: "Joshua"
+      - family-names: "Bishop"
+        given-names: "Brittany P."
+      - family-names: "Peek"
+        given-names: "Nadya"
+      - family-names: "Holmberg"
+        given-names: "Vincent C."
+      - family-names: "Pozzo"
+        given-names: "Lilo D."
+    journal: "Digital Discovery"
+    year: 2023
+    volume: "2"
+    issue: "4"
+    start: "1042"
+    end: "1057"
+    doi: "10.1039/d3dd00033h"
