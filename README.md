@@ -1,4 +1,7 @@
 # OT2-DOE
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24486011.svg)](https://doi.org/10.5281/zenodo.24486011)
+
 A group of python modules and notebooks made for high throughput measurement and analysis of samples made through a liquid handling robot (Opentrons or OT2). 
 
     Note: As of 02/01/22 this repo is still being developed with new functions, bugs and documentation updated constantly. 
